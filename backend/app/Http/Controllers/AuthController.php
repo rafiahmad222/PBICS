@@ -18,17 +18,15 @@ class AuthController extends Controller
             'Password' => 'required|string',
         ]);
 
-        // Cari Karyawan berdasarkan Username
         $karyawan = DataKaryawan::where('Username', $request->Username)->first();
 
-        // Cek jika Karyawan tidak ditemukan atau Password salah
         if (!$karyawan || !Hash::check($request->Password, $karyawan->Password)) {
             return response()->json([
                 'message' => 'Username atau Password salah!'
             ], 401);
         }
 
-        // Buat Token dengan Sanctum
+        // Token Sanctum
         $token = $karyawan->createToken('auth_token')->plainTextToken;
 
         return response()->json([
@@ -61,11 +59,7 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
-        // Menghapus semua token dari user yang sedang login
         $request->user()->tokens()->delete();
-        
-        // Alternatif jika ingin menghapus token yang dipakai saat ini saja:
-        // $request->user()->currentAccessToken()->delete();
 
         return response()->json([
             'message' => 'Logout berhasil'
