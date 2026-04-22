@@ -15,7 +15,6 @@ class CheckDivisi
      */
     public function handle(Request $request, Closure $next, string $divisi): Response
     {
-        // Cek apakah user login dan divisinya sesuai
         if (!$request->user() || $request->user()->Divisi !== $divisi) {
             return response()->json([
                 'message' => 'Akses ditolak! Fitur ini hanya untuk divisi ' . $divisi
