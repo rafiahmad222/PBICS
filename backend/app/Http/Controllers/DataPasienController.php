@@ -45,7 +45,7 @@ class DataPasienController extends Controller
         try {
             $validated = $request->validate([
                 'no_member' => 'nullable|string|max:50',
-                'Tipe_member' => 'required|in:Member,Non Member',
+                'Tipe_member' => 'nullable|in:Member,Non Member',
                 'Nama_pasien' => 'required|string|max:255',
                 'no_Identitas' => 'required|string|max:100',
                 'Tempat_Lahir' => 'required|string|max:100',
@@ -151,22 +151,25 @@ class DataPasienController extends Controller
 
         try {
             $validated = $request->validate([
-                'no_member' => 'nullable|string|max:50',
-                'Tipe_member' => 'required|in:Member,Non Member',
-                'Nama_pasien' => 'required|string|max:255',
-                'no_Identitas' => 'required|string|max:100',
-                'Tempat_Lahir' => 'required|string|max:100',
-                'Tanggal_Lahir' => 'required|date',
-                'Jenis_Kelamin' => 'required|in:Laki-laki,Perempuan',
-                'Email' => 'nullable|email',
-                'no_Telp' => 'required|string|max:20',
-                'Alamat' => 'nullable|string',
-                'KabKota_id' => 'required|exists:KabKota,id',
-                'Kec_id' => 'required|exists:Kec,id',
+                'no_member' => 'sometimes|nullable|string|max:50',
+                'Tipe_member' => 'sometimes|nullable|in:Member,Non Member',
+                'Nama_pasien' => 'sometimes|required|string|max:255',
+                'no_Identitas' => 'sometimes|required|string|max:100',
+                'Tempat_Lahir' => 'sometimes|required|string|max:100',
+                'Tanggal_Lahir' => 'sometimes|required|date',
+                'Jenis_Kelamin' => 'sometimes|required|in:Laki-laki,Perempuan',
+                'Email' => 'sometimes|nullable|email',
+                'no_Telp' => 'sometimes|required|string|max:20',
+                'Alamat' => 'sometimes|nullable|string',
+                'KabKota_id' => 'sometimes|required|exists:KabKota,id',
+                'Kec_id' => 'sometimes|required|exists:Kec,id',
             ]);
 
             $validated['Tipe_member'] = $validated['Tipe_member'] ?? $dataPasien->Tipe_member;
-            $validated['Jenis_Kelamin'] = $validated['Jenis_Kelamin'] === 'Laki-laki' ? 'L' : 'P';
+            
+            if (isset($validated['Jenis_Kelamin'])) {
+                $validated['Jenis_Kelamin'] = $validated['Jenis_Kelamin'] === 'Laki-laki' ? 'L' : 'P';
+            }
 
             $dataPasien->update($validated);
 

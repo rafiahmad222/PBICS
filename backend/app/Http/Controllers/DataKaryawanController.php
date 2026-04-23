@@ -118,17 +118,17 @@ class DataKaryawanController extends Controller
         try {
             // Validasi input
             $validated = $request->validate([
-                'NamaLengkap_karyawan' => 'required|string',
-                'Nomor_Identitas' => 'required|string|unique:data_karyawan,Nomor_Identitas,' . $id,
-                'Tanggal_Lahir' => 'required|date',
-                'Tempat_Lahir' => 'required|string',
-                'Alamat' => 'nullable|string',
-                'Divisi' => 'required|in:Dokter,Customer Service,Perawat,Staff Gudang,Kasir,Manager,HRD,Owner,Komisaris',
-                'Jabatan' => 'required|in:Lead,Anggota Staff',
-                'Cabang' => 'required|in:Jember,Lumajang',
-                'Email' => 'required|email|unique:data_karyawan,Email,' . $id,
-                'No_Telp' => 'required|string',
-                'Username' => 'required|string|unique:data_karyawan,Username,' . $id,
+                'NamaLengkap_karyawan' => 'sometimes|required|string',
+                'Nomor_Identitas' => 'sometimes|required|string|unique:data_karyawan,Nomor_Identitas,' . $id,
+                'Tanggal_Lahir' => 'sometimes|required|date',
+                'Tempat_Lahir' => 'sometimes|required|string',
+                'Alamat' => 'sometimes|nullable|string',
+                'Divisi' => 'sometimes|required|in:Dokter,Customer Service,Perawat,Staff Gudang,Kasir,Manager,HRD,Owner,Komisaris',
+                'Jabatan' => 'sometimes|required|in:Lead,Anggota Staff',
+                'Cabang' => 'sometimes|required|in:Jember,Lumajang',
+                'Email' => 'sometimes|required|email|unique:data_karyawan,Email,' . $id,
+                'No_Telp' => 'sometimes|required|string',
+                'Username' => 'sometimes|required|string|unique:data_karyawan,Username,' . $id,
             ]);
 
             // Update data karyawan
