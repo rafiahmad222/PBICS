@@ -12,9 +12,15 @@ class DataKaryawanController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $karyawan = DataKaryawan::paginate(10)->through(function ($item) {
+        $query = DataKaryawan::query();
+
+        if ($request->has('search') && $request->search != '') {
+            $query->where('NamaLengkap_karyawan', 'like', '%' . $request->search . '%');
+        }
+
+        $karyawan = $query->paginate(10)->through(function ($item) {
 
             // Inisial nama (DJ, DS, dll)
             $inisial = collect(explode(' ', $item->NamaLengkap_karyawan))
