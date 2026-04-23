@@ -45,6 +45,7 @@ class DataPasienController extends Controller
         try {
             $validated = $request->validate([
                 'no_member' => 'nullable|string|max:50',
+                'Tipe_member' => 'required|in:Member,Non Member',
                 'Nama_pasien' => 'required|string|max:255',
                 'no_Identitas' => 'required|string|max:100',
                 'Tempat_Lahir' => 'required|string|max:100',
@@ -98,6 +99,8 @@ class DataPasienController extends Controller
 
             $validated['no_RM'] = $noRM;
 
+            $validated['Tipe_member'] = $validated['Tipe_member'] ?? 'Non Member';
+
             $validated['Jenis_Kelamin'] = $validated['Jenis_Kelamin'] === 'Laki-laki' ? 'L' : 'P';
 
             $pasien = DataPasien::create($validated);
@@ -149,6 +152,7 @@ class DataPasienController extends Controller
         try {
             $validated = $request->validate([
                 'no_member' => 'nullable|string|max:50',
+                'Tipe_member' => 'required|in:Member,Non Member',
                 'Nama_pasien' => 'required|string|max:255',
                 'no_Identitas' => 'required|string|max:100',
                 'Tempat_Lahir' => 'required|string|max:100',
@@ -161,6 +165,7 @@ class DataPasienController extends Controller
                 'Kec_id' => 'required|exists:Kec,id',
             ]);
 
+            $validated['Tipe_member'] = $validated['Tipe_member'] ?? $dataPasien->Tipe_member;
             $validated['Jenis_Kelamin'] = $validated['Jenis_Kelamin'] === 'Laki-laki' ? 'L' : 'P';
 
             $dataPasien->update($validated);

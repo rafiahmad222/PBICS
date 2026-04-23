@@ -15,6 +15,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('kode_Customer')->unique()->nullable();
             $table->string('no_member')->nullable()->unique();
+            $table->enum('Tipe_member', ['Member','Non Member']);
             $table->string('no_RM')->unique();
             $table->string('Nama_pasien');
             $table->string('no_Identitas'); // No. KTP/Passport
