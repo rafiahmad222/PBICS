@@ -13,15 +13,30 @@ class DataPasienController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $pasiens = DataPasien::select(
+        $query = DataPasien::select(
             'id',
             'Nama_pasien',
             'kode_Customer',
+            'Tipe_member',
             'no_member',
             'no_RM',
-        )->latest()->paginate(10);
+        );
+
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('Nama_pasien', 'like', '%' . $search . '%')
+                  ->orWhere('kode_Customer', 'like', '%' . $search . '%');
+            });
+        }
+
+        if ($request->has('Tipe_member') && $request->Tipe_member != '') {
+            $query->where('Tipe_member', $request->Tipe_member);
+        }
+
+        $pasiens = $query->latest()->paginate(10);
 
         return response()->json([
             'message' => 'Data pasien berhasil diambil',
