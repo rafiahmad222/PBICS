@@ -65,10 +65,13 @@ class DataKaryawanController extends Controller
                 'No_Telp' => 'required|string',
                 'Username' => 'required|string|unique:data_karyawan',
                 'Password' => 'required|string|min:6',
+                'Tanggal_bergabung' => 'nullable|date',
             ]);
 
             // Hash password sebelum disimpan
             $validated['Password'] = Hash::make($validated['Password']);
+
+            $validated['Tanggal_bergabung'] = $validated['Tanggal_bergabung'] ?? date('Y-m-d');
 
             // Buat data karyawan baru (UUID otomatis generate)
             $karyawan = DataKaryawan::create($validated);
@@ -135,6 +138,7 @@ class DataKaryawanController extends Controller
                 'Email' => 'sometimes|required|email|unique:data_karyawan,Email,' . $id,
                 'No_Telp' => 'sometimes|required|string',
                 'Username' => 'sometimes|required|string|unique:data_karyawan,Username,' . $id,
+                'Tanggal_bergabung' => 'sometimes|nullable|date',
             ]);
 
             // Update data karyawan

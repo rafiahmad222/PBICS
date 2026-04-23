@@ -28,7 +28,7 @@ class DataKaryawan extends Authenticatable
         'No_Telp',
         'Username',
         'Password',
-        // Kurang 1 field untuk Tanggal_bergabung
+        'Tanggal_bergabung',
     ];
 
     // Supaya password tidak ikut ke response JSON

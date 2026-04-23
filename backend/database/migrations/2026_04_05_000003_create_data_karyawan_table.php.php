@@ -22,6 +22,7 @@ return new class extends Migration
             $table->date('Tanggal_Lahir');
             $table->text('Alamat')->nullable();
             $table->string('Email')->unique();
+            $table->string('Tanggal_bergabung');
             $table->string('No_Telp');
             $table->string('Username')->unique();
             $table->string('Password');
