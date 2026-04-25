@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('Nama_barang_apotek', 100);
             $table->string('Kategori', 100);
             $table->integer('Stok');
-            $table->integer('Batas_minimal_stok_barang_apotek');
+            $table->integer('Batas_minimal_stok_barang_apotek')->default(5);
             $table->timestamps();
         });
     }
