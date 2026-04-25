@@ -15,6 +15,6 @@ class StokBarangApotek extends Model
         'Nama_barang_apotek',
         'Kategori',
         'Stok',
-        'Batas_minimal_stok_barang_apotek',
+        'Batas_minimal_stok',
     ];
 }

@@ -17,5 +17,6 @@ class StokProduk extends Model
         'Kategori',
         'Harga',
         'Stok',
+        'Batas_minimal_stok',
     ];
 }

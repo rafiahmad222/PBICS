@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('Kategori', 100);
             $table->decimal('Harga', 15, 2);
             $table->integer('Stok');
-            $table->integer('Batas_minimal_stok_bahan')->default(5);
+            $table->integer('Batas_minimal_stok')->default(5);
             $table->timestamps();
         });
     }

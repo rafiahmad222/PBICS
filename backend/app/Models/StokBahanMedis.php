@@ -15,5 +15,6 @@ class StokBahanMedis extends Model
         'Nama_bahan_medis',
         'Kategori',
         'Stok',
+        'Batas_minimal_stok',
     ];
 }

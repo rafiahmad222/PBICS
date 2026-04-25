@@ -15,6 +15,6 @@ class StokBahanInfus extends Model
         'Nama_bahan_Infus',
         'Kategori',
         'Stok',
-        'Batas_minimal_stok_bahan_infus',
+        'Batas_minimal_stok',
     ];
 }
