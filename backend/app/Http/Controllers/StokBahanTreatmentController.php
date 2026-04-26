@@ -32,6 +32,7 @@ class StokBahanTreatmentController extends Controller
                 'Kategori' => 'required|string|max:100',
                 'Harga' => 'required|numeric',
                 'Stok' => 'required|integer',
+                'Batas_minimal_stok' => 'required|integer',
             ]);
 
             $stokBahan = StokBahanTreatment::create($validated);
@@ -90,6 +91,7 @@ class StokBahanTreatmentController extends Controller
                 'Kategori' => 'sometimes|required|string|max:100',
                 'Harga' => 'sometimes|required|numeric',
                 'Stok' => 'sometimes|required|integer',
+                'Batas_minimal_stok' => 'sometimes|required|integer',
             ]);
 
             $stokBahan->update($validated);

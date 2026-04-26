@@ -30,7 +30,7 @@ class StokBahanInfusController extends Controller
                 'Nama_bahan_Infus' => 'required|string|max:100',
                 'Kategori' => 'required|string|max:100',
                 'Stok' => 'required|integer',
-                'Batas_minimal_stok_bahan_infus' => 'required|integer',
+                'Batas_minimal_stok' => 'required|integer',
             ]);
 
             $stokBahanInfus = StokBahanInfus::create($validated);
@@ -87,7 +87,7 @@ class StokBahanInfusController extends Controller
                 'Nama_bahan_Infus' => 'sometimes|required|string|max:100',
                 'Kategori' => 'sometimes|required|string|max:100',
                 'Stok' => 'sometimes|required|integer',
-                'Batas_minimal_stok_bahan_infus' => 'sometimes|required|integer',
+                'Batas_minimal_stok' => 'sometimes|required|integer',
             ]);
 
             $stokBahanInfus->update($validated);

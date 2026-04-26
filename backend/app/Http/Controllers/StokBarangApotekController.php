@@ -30,7 +30,7 @@ class StokBarangApotekController extends Controller
                 'Nama_barang_apotek' => 'required|string|max:100',
                 'Kategori' => 'required|string|max:100',
                 'Stok' => 'required|integer',
-                'Batas_minimal_stok_barang_apotek' => 'required|integer',
+                'Batas_minimal_stok' => 'required|integer',
             ]);
 
             $stokBarangApotek = StokBarangApotek::create($validated);
@@ -87,7 +87,7 @@ class StokBarangApotekController extends Controller
                 'Nama_barang_apotek' => 'sometimes|required|string|max:100',
                 'Kategori' => 'sometimes|required|string|max:100',
                 'Stok' => 'sometimes|required|integer',
-                'Batas_minimal_stok_barang_apotek' => 'sometimes|required|integer',
+                'Batas_minimal_stok' => 'sometimes|required|integer',
             ]);
 
             $stokBarangApotek->update($validated);
