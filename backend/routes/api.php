@@ -13,14 +13,13 @@ use App\Http\Controllers\StokBarangApotekController;
 use App\Http\Controllers\AuthController;
 
 Route::post('/login', [AuthController::class, 'login']);
-
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // Data Pasien & Karyawan
     Route::apiResource('pasien', DataPasienController::class);
-    Route::apiResource('karyawan', DataKaryawanController::class);
+Route::apiResource('karyawan', DataKaryawanController::class);
     Route::post('/karyawan/{id}/reset-password', [DataKaryawanController::class, 'updatePassword'])
         ->middleware('Divisi:HRD');
 
