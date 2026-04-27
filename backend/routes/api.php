@@ -9,7 +9,6 @@ use App\Http\Controllers\StokBahanTreatmentController;
 use App\Http\Controllers\StokBahanMedisController;
 use App\Http\Controllers\StokBahanInfusController;
 use App\Http\Controllers\StokBarangApotekController;
-
 use App\Http\Controllers\AuthController;
 
 Route::post('/login', [AuthController::class, 'login']);
@@ -19,7 +18,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Data Pasien & Karyawan
     Route::apiResource('pasien', DataPasienController::class);
-Route::apiResource('karyawan', DataKaryawanController::class);
+    Route::apiResource('karyawan', DataKaryawanController::class);
     Route::post('/karyawan/{id}/reset-password', [DataKaryawanController::class, 'updatePassword'])
         ->middleware('Divisi:HRD');
 
