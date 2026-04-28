@@ -24,18 +24,6 @@ class DataPasienController extends Controller
             'no_RM',
         );
 
-        if ($request->has('search') && $request->search != '') {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('Nama_pasien', 'like', '%' . $search . '%')
-                  ->orWhere('kode_Customer', 'like', '%' . $search . '%');
-            });
-        }
-
-        if ($request->has('Tipe_member') && $request->Tipe_member != '') {
-            $query->where('Tipe_member', $request->Tipe_member);
-        }
-
         $pasiens = $query->latest()->paginate(10);
 
         return response()->json([
@@ -60,7 +48,7 @@ class DataPasienController extends Controller
         try {
             $validated = $request->validate([
                 'no_member' => 'nullable|string|max:50',
-                'Tipe_member' => 'nullable|in:Member,Non Member',
+                'Tipe_Member' => 'nullable|in:Member,Non Member',
                 'Nama_pasien' => 'required|string|max:255',
                 'no_Identitas' => 'required|string|max:100',
                 'Tempat_Lahir' => 'required|string|max:100',
@@ -114,7 +102,9 @@ class DataPasienController extends Controller
 
             $validated['no_RM'] = $noRM;
 
-            $validated['Tipe_member'] = $validated['Tipe_member'] ?? 'Non Member';
+            if (empty($validated['Tipe_Member'])) {
+                $validated['Tipe_Member'] = 'Non Member';
+            }
 
             $validated['Jenis_Kelamin'] = $validated['Jenis_Kelamin'] === 'Laki-laki' ? 'L' : 'P';
 
@@ -167,7 +157,7 @@ class DataPasienController extends Controller
         try {
             $validated = $request->validate([
                 'no_member' => 'sometimes|nullable|string|max:50',
-                'Tipe_member' => 'sometimes|nullable|in:Member,Non Member',
+                'Tipe_Member' => 'sometimes|nullable|in:Member,Non Member',
                 'Nama_pasien' => 'sometimes|required|string|max:255',
                 'no_Identitas' => 'sometimes|required|string|max:100',
                 'Tempat_Lahir' => 'sometimes|required|string|max:100',
@@ -180,7 +170,11 @@ class DataPasienController extends Controller
                 'Kec_id' => 'sometimes|required|exists:Kec,id',
             ]);
 
-            $validated['Tipe_member'] = $validated['Tipe_member'] ?? $dataPasien->Tipe_member;
+            if (array_key_exists('Tipe_Member', $validated) && empty($validated['Tipe_Member'])) {
+                $validated['Tipe_Member'] = 'Non Member';
+            } elseif (!array_key_exists('Tipe_Member', $validated)) {
+                $validated['Tipe_Member'] = $dataPasien->Tipe_Member;
+            }
             
             if (isset($validated['Jenis_Kelamin'])) {
                 $validated['Jenis_Kelamin'] = $validated['Jenis_Kelamin'] === 'Laki-laki' ? 'L' : 'P';
@@ -206,6 +200,54 @@ class DataPasienController extends Controller
     public function destroy(DataPasien $dataPasien)
     {
         //
+    }
+
+    /**
+     * Get next generated Kode Customer and No RM for frontend preview
+     */
+    public function getNextNumbers()
+    {
+        // 🔥 PREVIEW KODE CUSTOMER
+        $bulan = date('m');
+        $tahun = date('Y');
+
+        $lastPasienKode = DataPasien::whereYear('created_at', $tahun)
+            ->whereMonth('created_at', $bulan)
+            ->orderBy('kode_Customer', 'desc')
+            ->first();
+
+        $lastNumber = $lastPasienKode ? (int) substr($lastPasienKode->kode_Customer, -4) : 0;
+        $newNumber = $lastNumber + 1;
+
+        $kodeCustomer = $tahun . "-" . $bulan . "-" . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
+
+        // 🔥 PREVIEW NO RM
+        $lastPasienRm = DataPasien::whereYear('created_at', date('Y'))
+            ->latest('created_at')
+            ->first();
+
+        if ($lastPasienRm) {
+            $lastMiddle = (int) substr($lastPasienRm->no_RM, 0, 2);
+            $lastRight = (int) substr($lastPasienRm->no_RM, 3, 2);
+            $lastLast = (int) substr($lastPasienRm->no_RM, 6, 2);
+
+            $counter = ($lastMiddle * 10000) + ($lastRight * 100) + $lastLast + 1;
+        } else {
+            $counter = 1;
+        }
+
+        $format1 = intdiv($counter, 10000) % 100;
+        $format2 = intdiv($counter, 100) % 100;
+        $format3 = $counter % 100;
+
+        $noRM = str_pad($format1, 2, '0', STR_PAD_LEFT) . "-" .
+            str_pad($format2, 2, '0', STR_PAD_LEFT) . "-" .
+            str_pad($format3, 2, '0', STR_PAD_LEFT);
+
+        return response()->json([
+            'kode_Customer' => $kodeCustomer,
+            'no_RM' => $noRM
+        ]);
     }
 
     public function getKecamatan($kabKotaId)

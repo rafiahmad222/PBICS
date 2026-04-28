@@ -17,6 +17,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // Data Pasien & Karyawan
+    Route::get('/pasien/next-numbers', [DataPasienController::class, 'getNextNumbers']);
     Route::apiResource('pasien', DataPasienController::class);
     Route::apiResource('karyawan', DataKaryawanController::class);
     Route::post('/karyawan/{id}/reset-password', [DataKaryawanController::class, 'updatePassword'])
