@@ -18,6 +18,7 @@ class DataKaryawan extends Authenticatable
     protected $fillable = [
         'NamaLengkap_karyawan',
         'Nomor_Identitas',
+        'kode_karyawan',
         'Tanggal_Lahir',
         'Tempat_Lahir',
         'Alamat',

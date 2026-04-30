@@ -30,6 +30,7 @@ class DataKaryawanController extends Controller
 
             return [
                 'id' => $item->id,
+                'kode_karyawan' => $item->kode_karyawan,
                 'nama_lengkap' => $item->NamaLengkap_karyawan,
                 'inisial' => $inisial,
                 'email' => $item->Email,
@@ -58,7 +59,7 @@ class DataKaryawanController extends Controller
                 'Tempat_Lahir' => 'required|string',
                 'Tanggal_Lahir' => 'required|date',
                 'Alamat' => 'nullable|string',
-                'Divisi' => 'required|in:Dokter,Customer Service,Perawat,Staff Gudang,Kasir,Manager,HRD,Owner,Komisaris',
+                'Divisi' => 'required|in:Super Admin,Owner,Dokter,Customer Service,HRD,Supervisor Treatment,Supervisor Produk,Gudang Umum,Staff OB,Staff Satpam,Apoteker,Asisten Apoteker,Asisten Supervisor Treatment',
                 'Jabatan' => 'required|in:Lead,Anggota Staff',
                 'Cabang' => 'required|in:Jember,Lumajang',
                 'Email' => 'required|email|unique:data_karyawan',
@@ -67,6 +68,33 @@ class DataKaryawanController extends Controller
                 'Password' => 'required|string|min:6',
                 'Tanggal_bergabung' => 'nullable|date',
             ]);
+
+            // Generate kode_karyawan
+            $divisi = $validated['Divisi'];
+            $jabatan = $validated['Jabatan'];
+
+            if ($divisi === 'Owner') {
+                $prefix = 'OWN';
+            } elseif ($divisi === 'Super Admin') {
+                $prefix = 'SAD';
+            } elseif ($jabatan === 'Lead') {
+                $prefix = 'LD';
+            } else {
+                $prefix = 'STF';
+            }
+
+            $lastKaryawan = DataKaryawan::where('kode_karyawan', 'like', $prefix . '-%')
+                ->orderBy('kode_karyawan', 'desc')
+                ->first();
+
+            if ($lastKaryawan) {
+                $lastNumber = (int) substr($lastKaryawan->kode_karyawan, 4);
+                $newNumber = $lastNumber + 1;
+            } else {
+                $newNumber = 1;
+            }
+
+            $validated['kode_karyawan'] = $prefix . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
 
             // Hash password sebelum disimpan
             $validated['Password'] = Hash::make($validated['Password']);
@@ -80,6 +108,7 @@ class DataKaryawanController extends Controller
                 'message' => 'Data karyawan berhasil ditambahkan',
                 'data' => [
                     'id' => $karyawan->id,
+                    'kode_karyawan' => $karyawan->kode_karyawan,
                     'nama_lengkap' => $karyawan->NamaLengkap_karyawan,
                     'email' => $karyawan->Email,
                 ]
@@ -132,7 +161,7 @@ class DataKaryawanController extends Controller
                 'Tanggal_Lahir' => 'sometimes|required|date',
                 'Tempat_Lahir' => 'sometimes|required|string',
                 'Alamat' => 'sometimes|nullable|string',
-                'Divisi' => 'sometimes|required|in:Dokter,Customer Service,Perawat,Staff Gudang,Kasir,Manager,HRD,Owner,Komisaris',
+                'Divisi' => 'sometimes|required|in:Super Admin,Owner,Dokter,Customer Service,HRD,Supervisor Treatment,Supervisor Produk,Gudang Umum,Staff OB,Staff Satpam,Apoteker,Asisten Apoteker,Asisten Supervisor Treatment',
                 'Jabatan' => 'sometimes|required|in:Lead,Anggota Staff',
                 'Cabang' => 'sometimes|required|in:Jember,Lumajang',
                 'Email' => 'sometimes|required|email|unique:data_karyawan,Email,' . $id,
