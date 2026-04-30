@@ -13,9 +13,10 @@ return new class extends Migration
     {
         Schema::create('data_karyawan', function (Blueprint $table) {
             $table->uuid('id')->primary();
+            $table->string('kode_karyawan')->unique();
             $table->string('NamaLengkap_karyawan');
             $table->string('Nomor_Identitas')->unique();
-            $table->enum('Divisi', ['Dokter', 'Customer Service', 'Perawat', 'Staff Gudang', 'Kasir', 'Manager', 'HRD', 'Owner', 'Komisaris']);
+            $table->enum('Divisi', ['Super Admin', 'Owner', 'Dokter', 'Customer Service', 'HRD', 'Supervisor Treatment', 'Supervisor Produk', 'Gudang Umum', 'Staff OB', 'Staff Satpam', 'Apoteker', 'Asisten Apoteker', 'Asisten Supervisor Treatment']);
             $table->enum('Jabatan', ['Lead', 'Anggota Staff']);
             $table->enum('Cabang', ['Jember', 'Lumajang']);
             $table->string('Tempat_Lahir');
