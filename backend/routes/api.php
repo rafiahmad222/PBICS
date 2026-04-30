@@ -11,14 +11,23 @@ use App\Http\Controllers\StokBahanInfusController;
 use App\Http\Controllers\StokBarangApotekController;
 use App\Http\Controllers\AuthController;
 
+//LOGIN
 Route::post('/login', [AuthController::class, 'login']);
+
+//Middleware Auth Sanctum
 Route::middleware('auth:sanctum')->group(function () {
+
+    //GET ME
     Route::get('/me', [AuthController::class, 'me']);
+
+    //LOGOUT
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    // Data Pasien & Karyawan
+    // Data Pasien
     Route::get('/pasien/next-numbers', [DataPasienController::class, 'getNextNumbers']);
     Route::apiResource('pasien', DataPasienController::class);
+    
+    //Data Karyawan 
     Route::apiResource('karyawan', DataKaryawanController::class);
     Route::post('/karyawan/{id}/reset-password', [DataKaryawanController::class, 'updatePassword'])
         ->middleware('Divisi:HRD');
