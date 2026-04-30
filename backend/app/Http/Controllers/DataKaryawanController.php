@@ -214,24 +214,4 @@ class DataKaryawanController extends Controller
             ], 422);
         }
     }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id)
-    {
-        $karyawan = DataKaryawan::find($id);
-
-        if (!$karyawan) {
-            return response()->json([
-                'message' => 'Data karyawan tidak ditemukan',
-            ], 404);
-        }
-
-        $karyawan->delete();
-
-        return response()->json([
-            'message' => 'Data karyawan berhasil dihapus',
-        ]);
-    }
 }
