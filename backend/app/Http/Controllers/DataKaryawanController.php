@@ -60,7 +60,7 @@ class DataKaryawanController extends Controller
                 'Tanggal_Lahir' => 'required|date',
                 'Alamat' => 'nullable|string',
                 'Divisi' => 'required|in:Super Admin,Owner,Dokter,Customer Service,HRD,Supervisor Treatment,Supervisor Produk,Gudang Umum,Staff OB,Staff Satpam,Apoteker,Asisten Apoteker,Asisten Supervisor Treatment',
-                'Jabatan' => 'required|in:Lead,Anggota Staff',
+                'Jabatan' => 'nullable|in:Lead,Anggota Staff',
                 'Cabang' => 'required|in:Jember,Lumajang',
                 'Email' => 'required|email|unique:data_karyawan',
                 'No_Telp' => 'required|string',
@@ -71,7 +71,12 @@ class DataKaryawanController extends Controller
 
             // Generate kode_karyawan
             $divisi = $validated['Divisi'];
-            $jabatan = $validated['Jabatan'];
+            $jabatan = $validated['Jabatan'] ?? null;
+
+            if ($divisi === 'Owner' || $divisi === 'Super Admin') {
+                $validated['Jabatan'] = null; // paksa null jika divisi Owner/Super Admin
+                $jabatan = null;
+            }
 
             if ($divisi === 'Owner') {
                 $prefix = 'OWN';
@@ -162,13 +167,18 @@ class DataKaryawanController extends Controller
                 'Tempat_Lahir' => 'sometimes|required|string',
                 'Alamat' => 'sometimes|nullable|string',
                 'Divisi' => 'sometimes|required|in:Super Admin,Owner,Dokter,Customer Service,HRD,Supervisor Treatment,Supervisor Produk,Gudang Umum,Staff OB,Staff Satpam,Apoteker,Asisten Apoteker,Asisten Supervisor Treatment',
-                'Jabatan' => 'sometimes|required|in:Lead,Anggota Staff',
+                'Jabatan' => 'sometimes|nullable|in:Lead,Anggota Staff',
                 'Cabang' => 'sometimes|required|in:Jember,Lumajang',
                 'Email' => 'sometimes|required|email|unique:data_karyawan,Email,' . $id,
                 'No_Telp' => 'sometimes|required|string',
                 'Username' => 'sometimes|required|string|unique:data_karyawan,Username,' . $id,
                 'Tanggal_bergabung' => 'sometimes|nullable|date',
             ]);
+
+            // Pastikan Jabatan dihapus jika divisi adalah Owner atau Super Admin
+            if (isset($validated['Divisi']) && in_array($validated['Divisi'], ['Owner', 'Super Admin'])) {
+                $validated['Jabatan'] = null;
+            }
 
             // Update data karyawan
             $karyawan->update($validated);

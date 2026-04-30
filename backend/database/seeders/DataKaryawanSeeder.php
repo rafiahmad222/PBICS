@@ -26,7 +26,12 @@ class DataKaryawanSeeder extends Seeder
 
         for ($i = 0; $i < 27; $i++) {
             $divisi = $faker->randomElement(['Super Admin', 'Owner', 'Dokter', 'Customer Service', 'HRD', 'Supervisor Treatment', 'Supervisor Produk', 'Gudang Umum', 'Staff OB', 'Staff Satpam', 'Apoteker', 'Asisten Apoteker', 'Asisten Supervisor Treatment']);
-            $jabatan = $faker->randomElement(['Lead','Anggota Staff']);
+            
+            if ($divisi === 'Owner' || $divisi === 'Super Admin') {
+                $jabatan = null;
+            } else {
+                $jabatan = $faker->randomElement(['Lead','Anggota Staff']);
+            }
 
             if ($divisi === 'Owner') {
                 $prefix = 'OWN';
