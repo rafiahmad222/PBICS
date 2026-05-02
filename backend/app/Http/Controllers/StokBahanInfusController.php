@@ -28,6 +28,7 @@ class StokBahanInfusController extends Controller
         try {
             $validated = $request->validate([
                 'Nama_bahan_Infus' => 'required|string|max:100',
+                'Kode_bahan_Infus' => 'required|string|max:225|unique:stok_bahan_infus,Kode_bahan_Infus',
                 'Kategori' => 'required|string|max:100',
                 'Stok' => 'required|integer',
                 'Batas_minimal_stok' => 'required|integer',
@@ -85,6 +86,7 @@ class StokBahanInfusController extends Controller
         try {
             $validated = $request->validate([
                 'Nama_bahan_Infus' => 'sometimes|required|string|max:100',
+                'Kode_bahan_Infus' => 'sometimes|required|string|max:225|unique:stok_bahan_infus,Kode_bahan_Infus,' . $id,
                 'Kategori' => 'sometimes|required|string|max:100',
                 'Stok' => 'sometimes|required|integer',
                 'Batas_minimal_stok' => 'sometimes|required|integer',

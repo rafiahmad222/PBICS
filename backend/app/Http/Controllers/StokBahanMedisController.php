@@ -28,6 +28,7 @@ class StokBahanMedisController extends Controller
         try {
             $validated = $request->validate([
                 'Nama_bahan_medis' => 'required|string|max:100',
+                'Kode_bahan_medis' => 'required|string|max:225|unique:stok_bahan_medis,Kode_bahan_medis',
                 'Kategori' => 'required|string|max:100',
                 'Stok' => 'required|integer',
                 'Batas_minimal_stok' => 'required|integer',
@@ -85,6 +86,7 @@ class StokBahanMedisController extends Controller
         try {
             $validated = $request->validate([
                 'Nama_bahan_medis' => 'sometimes|required|string|max:100',
+                'Kode_bahan_medis' => 'sometimes|required|string|max:225|unique:stok_bahan_medis,Kode_bahan_medis,' . $id,
                 'Kategori' => 'sometimes|required|string|max:100',
                 'Stok' => 'sometimes|required|integer',
                 'Batas_minimal_stok' => 'sometimes|required|integer',

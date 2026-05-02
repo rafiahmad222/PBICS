@@ -13,6 +13,7 @@ class StokBahanInfus extends Model
 
     protected $fillable = [
         'Nama_bahan_Infus',
+        'Kode_bahan_Infus',
         'Kategori',
         'Stok',
         'Batas_minimal_stok',

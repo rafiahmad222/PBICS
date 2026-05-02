@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('stok_bahan_infus', function (Blueprint $table) {
             $table->id();
             $table->string('Nama_bahan_Infus', 100);
+            $table->string('Kode_bahan_Infus', 225)->unique();
             $table->string('Kategori', 100);
             $table->integer('Stok');
             $table->integer('Batas_minimal_stok')->default(5);
