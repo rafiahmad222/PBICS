@@ -27,13 +27,19 @@ class StokBahanTreatmentController extends Controller
     {
         try {
             $validated = $request->validate([
-                'Kode_Produk' => 'required|string|max:225|unique:stok_bahan_treatments,Kode_Produk',
                 'Nama_produk' => 'required|string|max:100',
                 'Kategori' => 'required|string|max:100',
                 'Harga' => 'required|numeric',
                 'Stok' => 'required|integer',
                 'Batas_minimal_stok' => 'required|integer',
             ]);
+
+            // AUTO GENERATE KODE PRODUK TREATMENT
+            $lastBahan = StokBahanTreatment::orderBy('id', 'desc')->first();
+            $lastNumber = $lastBahan ? (int) substr($lastBahan->Kode_Produk, 4) : 0;
+            $newNumber = $lastNumber + 1;
+            
+            $validated['Kode_Produk'] = 'TRT-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
 
             $stokBahan = StokBahanTreatment::create($validated);
 
@@ -128,6 +134,23 @@ class StokBahanTreatmentController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Data Stok Bahan Treatment berhasil dihapus'
+        ]);
+    }
+
+    /**
+     * Get next generated Kode Produk for frontend preview
+     */
+    public function getNextNumber()
+    {
+        $lastBahan = StokBahanTreatment::orderBy('id', 'desc')->first();
+        $lastNumber = $lastBahan ? (int) substr($lastBahan->Kode_Produk, 4) : 0;
+        $newNumber = $lastNumber + 1;
+        
+        $kodeProduk = 'TRT-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+
+        return response()->json([
+            'status' => 'success',
+            'Kode_Produk' => $kodeProduk
         ]);
     }
 }
