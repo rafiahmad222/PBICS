@@ -43,6 +43,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('stok-bahan-treatment', StokBahanTreatmentController::class);
 
     // Stok Bahan Medis
+    Route::get('/stok-bahan-medis/next-number', [StokBahanMedisController::class, 'getNextNumber']);
     Route::apiResource('stok-bahan-medis', StokBahanMedisController::class);
 
     // Stok Bahan Infus

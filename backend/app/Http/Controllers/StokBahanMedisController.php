@@ -28,11 +28,17 @@ class StokBahanMedisController extends Controller
         try {
             $validated = $request->validate([
                 'Nama_bahan_medis' => 'required|string|max:100',
-                'Kode_bahan_medis' => 'required|string|max:225|unique:stok_bahan_medis,Kode_bahan_medis',
                 'Kategori' => 'required|string|max:100',
                 'Stok' => 'required|integer',
                 'Batas_minimal_stok' => 'required|integer',
             ]);
+
+            // AUTO GENERATE KODE BAHAN MEDIS
+            $lastBahan = StokBahanMedis::orderBy('id', 'desc')->first();
+            $lastNumber = $lastBahan ? (int) substr($lastBahan->Kode_bahan_medis, 4) : 0;
+            $newNumber = $lastNumber + 1;
+            
+            $validated['Kode_bahan_medis'] = 'MDS-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
 
             $stokBahanMedis = StokBahanMedis::create($validated);
 
@@ -105,5 +111,22 @@ class StokBahanMedisController extends Controller
                 'errors' => $e->errors()
             ], 422);
         }
+    }
+
+    /**
+     * Get next generated Kode Bahan Medis for frontend preview
+     */
+    public function getNextNumber()
+    {
+        $lastBahan = StokBahanMedis::orderBy('id', 'desc')->first();
+        $lastNumber = $lastBahan ? (int) substr($lastBahan->Kode_bahan_medis, 4) : 0;
+        $newNumber = $lastNumber + 1;
+        
+        $kodeBahanMedis = 'MDS-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+
+        return response()->json([
+            'status' => 'success',
+            'Kode_bahan_medis' => $kodeBahanMedis
+        ]);
     }
 }
