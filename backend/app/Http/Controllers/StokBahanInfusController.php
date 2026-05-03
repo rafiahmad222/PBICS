@@ -28,11 +28,17 @@ class StokBahanInfusController extends Controller
         try {
             $validated = $request->validate([
                 'Nama_bahan_Infus' => 'required|string|max:100',
-                'Kode_bahan_Infus' => 'required|string|max:225|unique:stok_bahan_infus,Kode_bahan_Infus',
                 'Kategori' => 'required|string|max:100',
                 'Stok' => 'required|integer',
                 'Batas_minimal_stok' => 'required|integer',
             ]);
+
+            // AUTO GENERATE KODE BAHAN INFUS
+            $lastBahan = StokBahanInfus::orderBy('id', 'desc')->first();
+            $lastNumber = $lastBahan ? (int) substr($lastBahan->Kode_bahan_Infus, 4) : 0;
+            $newNumber = $lastNumber + 1;
+            
+            $validated['Kode_bahan_Infus'] = 'INF-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
 
             $stokBahanInfus = StokBahanInfus::create($validated);
 
@@ -126,6 +132,23 @@ class StokBahanInfusController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Data Stok Bahan Infus berhasil dihapus'
+        ]);
+    }
+
+    /**
+     * Get next generated Kode Bahan Infus for frontend preview
+     */
+    public function getNextNumber()
+    {
+        $lastBahan = StokBahanInfus::orderBy('id', 'desc')->first();
+        $lastNumber = $lastBahan ? (int) substr($lastBahan->Kode_bahan_Infus, 4) : 0;
+        $newNumber = $lastNumber + 1;
+        
+        $kodeBahanInfus = 'INF-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+
+        return response()->json([
+            'status' => 'success',
+            'Kode_bahan_Infus' => $kodeBahanInfus
         ]);
     }
 }
