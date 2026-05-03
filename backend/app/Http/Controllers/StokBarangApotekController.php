@@ -28,11 +28,17 @@ class StokBarangApotekController extends Controller
         try {
             $validated = $request->validate([
                 'Nama_barang_apotek' => 'required|string|max:100',
-                'Kode_barang_apotek' => 'required|string|max:225|unique:stok_barang_apoteks,Kode_barang_apotek',
                 'Kategori' => 'required|string|max:100',
                 'Stok' => 'required|integer',
                 'Batas_minimal_stok' => 'required|integer',
             ]);
+
+            // AUTO GENERATE KODE BARANG APOTEK
+            $lastBarang = StokBarangApotek::orderBy('id', 'desc')->first();
+            $lastNumber = $lastBarang ? (int) substr($lastBarang->Kode_barang_apotek, 4) : 0;
+            $newNumber = $lastNumber + 1;
+            
+            $validated['Kode_barang_apotek'] = 'APT-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
 
             $stokBarangApotek = StokBarangApotek::create($validated);
 
@@ -105,5 +111,22 @@ class StokBarangApotekController extends Controller
                 'errors' => $e->errors()
             ], 422);
         }
+    }
+
+    /**
+     * Get next generated Kode Barang Apotek for frontend preview
+     */
+    public function getNextNumber()
+    {
+        $lastBarang = StokBarangApotek::orderBy('id', 'desc')->first();
+        $lastNumber = $lastBarang ? (int) substr($lastBarang->Kode_barang_apotek, 4) : 0;
+        $newNumber = $lastNumber + 1;
+        
+        $kodeBarangApotek = 'APT-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+
+        return response()->json([
+            'status' => 'success',
+            'Kode_barang_apotek' => $kodeBarangApotek
+        ]);
     }
 }
