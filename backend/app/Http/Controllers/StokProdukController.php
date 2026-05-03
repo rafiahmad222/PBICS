@@ -27,13 +27,19 @@ class StokProdukController extends Controller
     {
         try {
             $validated = $request->validate([
-                'Kode_Produk' => 'required|string|max:225|unique:stok_produks,Kode_Produk',
                 'Nama_produk' => 'required|string|max:100',
                 'Kategori' => 'required|string|max:100',
                 'Harga' => 'required|numeric',
                 'Stok' => 'required|integer',
                 'Batas_minimal_stok' => 'required|integer',
             ]);
+
+            // AUTO GENERATE KODE PRODUK
+            $lastProduk = StokProduk::orderBy('id', 'desc')->first();
+            $lastNumber = $lastProduk ? (int) substr($lastProduk->Kode_Produk, 4) : 0;
+            $newNumber = $lastNumber + 1;
+            
+            $validated['Kode_Produk'] = 'PRD-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
 
             $stokProduk = StokProduk::create($validated);
 
@@ -107,5 +113,22 @@ class StokProdukController extends Controller
                 'errors' => $e->errors()
             ], 422);
         }
+    }
+
+    /**
+     * Get next generated Kode Produk for frontend preview
+     */
+    public function getNextNumber()
+    {
+        $lastProduk = StokProduk::orderBy('id', 'desc')->first();
+        $lastNumber = $lastProduk ? (int) substr($lastProduk->Kode_Produk, 4) : 0;
+        $newNumber = $lastNumber + 1;
+        
+        $kodeProduk = 'PRD-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+
+        return response()->json([
+            'status' => 'success',
+            'Kode_Produk' => $kodeProduk
+        ]);
     }
 }

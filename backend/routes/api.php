@@ -37,6 +37,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/wilayah/kecamatan/{kabKotaId}', [WilayahController::class, 'getKecByKabKota']);
 
     // Stok Produk
+    Route::get('/stok-produk/next-number', [StokProdukController::class, 'getNextNumber']);
     Route::apiResource('stok-produk', StokProdukController::class);
 
     // Stok Bahan Treatment
