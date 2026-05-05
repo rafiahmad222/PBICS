@@ -15,7 +15,8 @@ class StokProduk extends Model
         'Kode_Produk',
         'Nama_produk',
         'Kategori',
-        'Harga',
+        'Harga_Normal',
+        'Harga_Distributor',
         'Stok',
         'Batas_minimal_stok',
     ];
