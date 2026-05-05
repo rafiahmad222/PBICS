@@ -28,17 +28,16 @@ class StokBarangApotekController extends Controller
         try {
             $validated = $request->validate([
                 'Nama_barang_apotek' => 'required|string|max:100',
-                'Kategori' => 'required|string|max:100',
                 'Stok' => 'required|integer',
                 'Batas_minimal_stok' => 'required|integer',
             ]);
 
             // AUTO GENERATE KODE BARANG APOTEK
             $lastBarang = StokBarangApotek::orderBy('id', 'desc')->first();
-            $lastNumber = $lastBarang ? (int) substr($lastBarang->Kode_barang_apotek, 4) : 0;
+            $lastNumber = $lastBarang ? (int) substr($lastBarang->Kode_Produk, 4) : 0;
             $newNumber = $lastNumber + 1;
             
-            $validated['Kode_barang_apotek'] = 'APT-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+            $validated['Kode_Produk'] = 'APT-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
 
             $stokBarangApotek = StokBarangApotek::create($validated);
 
@@ -119,14 +118,14 @@ class StokBarangApotekController extends Controller
     public function getNextNumber()
     {
         $lastBarang = StokBarangApotek::orderBy('id', 'desc')->first();
-        $lastNumber = $lastBarang ? (int) substr($lastBarang->Kode_barang_apotek, 4) : 0;
+        $lastNumber = $lastBarang ? (int) substr($lastBarang->Kode_Produk, 4) : 0;
         $newNumber = $lastNumber + 1;
         
-        $kodeBarangApotek = 'APT-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+        $kodeProduk = 'APT-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
 
         return response()->json([
             'status' => 'success',
-            'Kode_barang_apotek' => $kodeBarangApotek
+            'Kode_Produk' => $kodeProduk
         ]);
     }
 }

@@ -16,8 +16,8 @@ return new class extends Migration
             $table->string('Nama_produk', 100);
             $table->string('Kode_Produk', 225)->unique();
             $table->string('Kategori', 100);
-            $table->decimal('Harga_Normal', 15, 2);
-            $table->decimal('Harga_Distributor', 15, 2);
+            $table->decimal('Harga', 15, 2)->nullable();
+            $table->decimal('Harga_Distributor', 15, 2)->nullable();
             $table->integer('Stok');
             $table->integer('Batas_minimal_stok')->default(5);
             $table->timestamps();

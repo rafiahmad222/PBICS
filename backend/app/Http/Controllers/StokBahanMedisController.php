@@ -35,10 +35,10 @@ class StokBahanMedisController extends Controller
 
             // AUTO GENERATE KODE BAHAN MEDIS
             $lastBahan = StokBahanMedis::orderBy('id', 'desc')->first();
-            $lastNumber = $lastBahan ? (int) substr($lastBahan->Kode_bahan_medis, 4) : 0;
+            $lastNumber = $lastBahan ? (int) substr($lastBahan->Kode_Produk, 4) : 0;
             $newNumber = $lastNumber + 1;
             
-            $validated['Kode_bahan_medis'] = 'MDS-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+            $validated['Kode_Produk'] = 'MDS-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
 
             $stokBahanMedis = StokBahanMedis::create($validated);
 
@@ -92,7 +92,7 @@ class StokBahanMedisController extends Controller
         try {
             $validated = $request->validate([
                 'Nama_bahan_medis' => 'sometimes|required|string|max:100',
-                'Kode_bahan_medis' => 'sometimes|required|string|max:225|unique:stok_bahan_medis,Kode_bahan_medis,' . $id,
+                'Kode_Produk' => 'sometimes|required|string|max:225|unique:stok_bahan_medis,Kode_Produk,' . $id,
                 'Kategori' => 'sometimes|required|string|max:100',
                 'Stok' => 'sometimes|required|integer',
                 'Batas_minimal_stok' => 'sometimes|required|integer',
@@ -119,14 +119,14 @@ class StokBahanMedisController extends Controller
     public function getNextNumber()
     {
         $lastBahan = StokBahanMedis::orderBy('id', 'desc')->first();
-        $lastNumber = $lastBahan ? (int) substr($lastBahan->Kode_bahan_medis, 4) : 0;
+        $lastNumber = $lastBahan ? (int) substr($lastBahan->Kode_Produk, 4) : 0;
         $newNumber = $lastNumber + 1;
         
-        $kodeBahanMedis = 'MDS-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+        $kodeProduk = 'MDS-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
 
         return response()->json([
             'status' => 'success',
-            'Kode_bahan_medis' => $kodeBahanMedis
+            'Kode_Produk' => $kodeProduk
         ]);
     }
 }

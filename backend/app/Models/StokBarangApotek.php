@@ -13,8 +13,7 @@ class StokBarangApotek extends Model
 
     protected $fillable = [
         'Nama_barang_apotek',
-        'Kode_barang_apotek',
-        'Kategori',
+        'Kode_Produk',
         'Stok',
         'Batas_minimal_stok',
     ];

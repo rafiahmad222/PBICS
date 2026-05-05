@@ -27,18 +27,17 @@ class StokBahanInfusController extends Controller
     {
         try {
             $validated = $request->validate([
-                'Nama_bahan_Infus' => 'required|string|max:100',
-                'Kategori' => 'required|string|max:100',
+                'Nama_bahan_infus' => 'required|string|max:100',
                 'Stok' => 'required|integer',
                 'Batas_minimal_stok' => 'required|integer',
             ]);
 
             // AUTO GENERATE KODE BAHAN INFUS
             $lastBahan = StokBahanInfus::orderBy('id', 'desc')->first();
-            $lastNumber = $lastBahan ? (int) substr($lastBahan->Kode_bahan_Infus, 4) : 0;
+            $lastNumber = $lastBahan ? (int) substr($lastBahan->Kode_Produk, 4) : 0;
             $newNumber = $lastNumber + 1;
             
-            $validated['Kode_bahan_Infus'] = 'INF-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+            $validated['Kode_Produk'] = 'INF-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
 
             $stokBahanInfus = StokBahanInfus::create($validated);
 
@@ -91,9 +90,8 @@ class StokBahanInfusController extends Controller
 
         try {
             $validated = $request->validate([
-                'Nama_bahan_Infus' => 'sometimes|required|string|max:100',
-                'Kode_bahan_Infus' => 'sometimes|required|string|max:225|unique:stok_bahan_infus,Kode_bahan_Infus,' . $id,
-                'Kategori' => 'sometimes|required|string|max:100',
+                'Nama_bahan_infus' => 'sometimes|required|string|max:100',
+                'Kode_Produk' => 'sometimes|required|string|max:225|unique:stok_bahan_infus,Kode_Produk,' . $id,
                 'Stok' => 'sometimes|required|integer',
                 'Batas_minimal_stok' => 'sometimes|required|integer',
             ]);
@@ -141,14 +139,14 @@ class StokBahanInfusController extends Controller
     public function getNextNumber()
     {
         $lastBahan = StokBahanInfus::orderBy('id', 'desc')->first();
-        $lastNumber = $lastBahan ? (int) substr($lastBahan->Kode_bahan_Infus, 4) : 0;
+        $lastNumber = $lastBahan ? (int) substr($lastBahan->Kode_Produk, 4) : 0;
         $newNumber = $lastNumber + 1;
         
-        $kodeBahanInfus = 'INF-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+        $kodeProduk = 'INF-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
 
         return response()->json([
             'status' => 'success',
-            'Kode_bahan_Infus' => $kodeBahanInfus
+            'Kode_Produk' => $kodeProduk
         ]);
     }
 }

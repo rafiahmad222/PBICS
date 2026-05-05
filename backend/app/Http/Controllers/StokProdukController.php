@@ -29,7 +29,6 @@ class StokProdukController extends Controller
             $validated = $request->validate([
                 'Nama_produk' => 'required|string|max:100',
                 'Kategori' => 'required|string|max:100',
-                'Harga' => 'required|numeric',
                 'Stok' => 'required|integer',
                 'Batas_minimal_stok' => 'required|integer',
             ]);
@@ -96,6 +95,7 @@ class StokProdukController extends Controller
                 'Nama_produk' => 'sometimes|required|string|max:100',
                 'Kategori' => 'sometimes|required|string|max:100',
                 'Harga' => 'sometimes|required|numeric',
+                'Harga_Distributor' => 'sometimes|required|numeric',
                 'Stok' => 'sometimes|required|integer',
                 'Batas_minimal_stok' => 'sometimes|required|integer',
             ]);

@@ -12,9 +12,8 @@ class StokBahanInfus extends Model
     protected $table = 'stok_bahan_infus';
 
     protected $fillable = [
-        'Nama_bahan_Infus',
-        'Kode_bahan_Infus',
-        'Kategori',
+        'Nama_bahan_infus',
+        'Kode_Produk',
         'Stok',
         'Batas_minimal_stok',
     ];
