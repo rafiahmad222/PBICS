@@ -25,7 +25,21 @@ class DataKaryawanSeeder extends Seeder
         ];
 
         for ($i = 0; $i < 27; $i++) {
-            $divisi = $faker->randomElement(['Super Admin', 'Owner', 'Dokter', 'Customer Service', 'HRD', 'Supervisor Treatment', 'Supervisor Produk', 'Gudang Umum', 'Staff OB', 'Staff Satpam', 'Apoteker', 'Asisten Apoteker', 'Asisten Supervisor Treatment']);
+            $divisi = $faker->randomElement([
+                'Super Admin',
+                'Owner',
+                'Dokter',
+                'Customer Service',
+                'HRD',
+                'Supervisor Treatment',
+                'Supervisor Produk',
+                'Manajer Marketing of Sales',
+                'Gudang Umum',
+                'Staff OB',
+                'Staff Satpam',
+                'Apoteker',
+                'Asisten Apoteker',
+                'Asisten Supervisor Treatment']);
             
             if ($divisi === 'Owner' || $divisi === 'Super Admin') {
                 $jabatan = null;
