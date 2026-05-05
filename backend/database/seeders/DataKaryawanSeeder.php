@@ -24,7 +24,7 @@ class DataKaryawanSeeder extends Seeder
             'STF' => 1,
         ];
 
-        for ($i = 0; $i < 27; $i++) {
+        for ($i = 0; $i < 50; $i++) {
             $divisi = $faker->randomElement([
                 'Super Admin',
                 'Owner',
