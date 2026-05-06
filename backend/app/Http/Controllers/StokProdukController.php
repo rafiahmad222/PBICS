@@ -16,6 +16,7 @@ class StokProdukController extends Controller
         $stokProduks = StokProduk::all();
         return response()->json([
             'status' => 'success',
+            'message' => 'Seluruh Data Stok Produk berhasil ditampilkan',
             'data' => $stokProduks
         ]);
     }
@@ -71,6 +72,7 @@ class StokProdukController extends Controller
 
         return response()->json([
             'status' => 'success',
+            'message' => 'Data Stok Produk berhasil ditampilkan',
             'data' => $stokProduk
         ]);
     }
