@@ -15,10 +15,11 @@ class PaketBundlingController extends Controller
     public function index()
     {
         // Ambil data paket bundling beserta produk-produknya
-        $paket = PaketBundling::with('produks')->get();
+        $paket = PaketBundling::get();
 
         return response()->json([
             'status' => 'success',
+            'message' => 'Data Paket Bundling berhasil diambil',
             'data' => $paket
         ]);
     }
@@ -38,6 +39,19 @@ class PaketBundlingController extends Controller
                 'produks' => 'required|array|min:1',
                 'produks.*.stok_produk_id' => 'required|exists:stok_produks,id',
                 'produks.*.Jumlah' => 'required|integer|min:1',
+            ], [
+                'Kode_paket.required' => 'Kode paket wajib diisi.',
+                'Kode_paket.unique' => 'Kode paket sudah digunakan.',
+                'Nama_paket.required' => 'Nama paket wajib diisi.',
+                'Harga_paket.required' => 'Harga paket wajib diisi.',
+                'Harga_paket.numeric' => 'Harga paket harus berupa angka.',
+                'produks.required' => 'Minimal satu produk harus ditambahkan.',
+                'produks.min' => 'Minimal satu produk harus ditambahkan.',
+                'produks.*.stok_produk_id.required' => 'Produk wajib dipilih.',
+                'produks.*.stok_produk_id.exists' => 'Produk yang dipilih tidak valid atau tidak ditemukan pada data stok.',
+                'produks.*.Jumlah.required' => 'Jumlah produk wajib diisi.',
+                'produks.*.Jumlah.integer' => 'Jumlah produk harus berupa angka bulat.',
+                'produks.*.Jumlah.min' => 'Jumlah produk minimal 1.',
             ]);
 
             DB::beginTransaction();
@@ -125,6 +139,19 @@ class PaketBundlingController extends Controller
                 'produks' => 'sometimes|required|array|min:1',
                 'produks.*.stok_produk_id' => 'required_with:produks|exists:stok_produks,id',
                 'produks.*.Jumlah' => 'required_with:produks|integer|min:1',
+            ], [
+                'Kode_paket.required' => 'Kode paket wajib diisi.',
+                'Kode_paket.unique' => 'Kode paket sudah digunakan.',
+                'Nama_paket.required' => 'Nama paket wajib diisi.',
+                'Harga_paket.required' => 'Harga paket wajib diisi.',
+                'Harga_paket.numeric' => 'Harga paket harus berupa angka.',
+                'produks.required' => 'Minimal satu produk harus ditambahkan.',
+                'produks.min' => 'Minimal satu produk harus ditambahkan.',
+                'produks.*.stok_produk_id.required_with' => 'Produk wajib dipilih.',
+                'produks.*.stok_produk_id.exists' => 'Produk yang dipilih tidak valid atau tidak ditemukan pada data stok.',
+                'produks.*.Jumlah.required_with' => 'Jumlah produk wajib diisi.',
+                'produks.*.Jumlah.integer' => 'Jumlah produk harus berupa angka bulat.',
+                'produks.*.Jumlah.min' => 'Jumlah produk minimal 1.',
             ]);
 
             DB::beginTransaction();
