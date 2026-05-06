@@ -62,11 +62,16 @@ class DataKaryawanController extends Controller
                 'Divisi' => 'required|in:Super Admin,Owner,Dokter,Customer Service,HRD,Supervisor Treatment,Supervisor Produk,Manajer Marketing of Sales,Gudang Umum,Staff OB,Staff Satpam,Apoteker,Asisten Apoteker,Asisten Supervisor Treatment',
                 'Jabatan' => 'nullable|in:Lead,Anggota Staff',
                 'Cabang' => 'required|in:Jember,Lumajang',
-                'Email' => 'required|email|unique:data_karyawan',
+                'Email' => 'required|email|unique:data_karyawan|ends_with:@gmail.com',
                 'No_Telp' => 'required|string',
                 'Username' => 'required|string|unique:data_karyawan',
                 'Password' => 'required|string|min:6',
                 'Tanggal_bergabung' => 'nullable|date',
+            ], [
+                'Nomor_Identitas.unique' => 'Nomor Identitas sudah terdaftar, silakan gunakan yang lain.',
+                'Email.unique' => 'Email sudah terdaftar, silakan gunakan email lain.',
+                'Email.ends_with' => 'Email harus menggunakan domain @gmail.com.',
+                'Username.unique' => 'Username sudah terdaftar, silakan gunakan username lain.'
             ]);
 
             // Generate kode_karyawan
@@ -169,10 +174,15 @@ class DataKaryawanController extends Controller
                 'Divisi' => 'sometimes|required|in:Super Admin,Owner,Dokter,Customer Service,HRD,Supervisor Treatment,Supervisor Produk,Manajer Marketing of Sales,Gudang Umum,Staff OB,Staff Satpam,Apoteker,Asisten Apoteker,Asisten Supervisor Treatment',
                 'Jabatan' => 'sometimes|nullable|in:Lead,Anggota Staff',
                 'Cabang' => 'sometimes|required|in:Jember,Lumajang',
-                'Email' => 'sometimes|required|email|unique:data_karyawan,Email,' . $id,
+                'Email' => 'sometimes|required|email|unique:data_karyawan,Email,' . $id . '|ends_with:@gmail.com',
                 'No_Telp' => 'sometimes|required|string',
                 'Username' => 'sometimes|required|string|unique:data_karyawan,Username,' . $id,
                 'Tanggal_bergabung' => 'sometimes|nullable|date',
+            ], [
+                'Nomor_Identitas.unique' => 'Nomor Identitas sudah terdaftar, silakan gunakan yang lain.',
+                'Email.unique' => 'Email sudah terdaftar, silakan gunakan email lain.',
+                'Email.ends_with' => 'Email harus menggunakan domain @gmail.com.',
+                'Username.unique' => 'Username sudah terdaftar, silakan gunakan username lain.'
             ]);
 
             // Pastikan Jabatan dihapus jika divisi adalah Owner atau Super Admin
