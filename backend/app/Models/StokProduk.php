@@ -20,4 +20,11 @@ class StokProduk extends Model
         'Stok',
         'Batas_minimal_stok',
     ];
+
+    public function paketBundlings()
+    {
+        return $this->belongsToMany(PaketBundling::class, 'paket_bundling_produks', 'stok_produk_id', 'paket_bundling_id')
+                    ->withPivot('Jumlah')
+                    ->withTimestamps();
+    }
 }

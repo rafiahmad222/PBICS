@@ -65,13 +65,14 @@ class DataKaryawanController extends Controller
                 'Email' => 'required|email|unique:data_karyawan|ends_with:@gmail.com',
                 'No_Telp' => 'required|string',
                 'Username' => 'required|string|unique:data_karyawan',
-                'Password' => 'required|string|min:6',
+                'Password' => 'required|string|min:6|alpha_num',
                 'Tanggal_bergabung' => 'nullable|date',
             ], [
                 'Nomor_Identitas.unique' => 'Nomor Identitas sudah terdaftar, silakan gunakan yang lain.',
                 'Email.unique' => 'Email sudah terdaftar, silakan gunakan email lain.',
                 'Email.ends_with' => 'Email harus menggunakan domain @gmail.com.',
-                'Username.unique' => 'Username sudah terdaftar, silakan gunakan username lain.'
+                'Username.unique' => 'Username sudah terdaftar, silakan gunakan username lain.',
+                'Password.alpha_num' => 'Password hanya boleh terdiri dari huruf dan angka (tidak boleh ada simbol).'
             ]);
 
             // Generate kode_karyawan
@@ -217,7 +218,9 @@ class DataKaryawanController extends Controller
 
         try {
             $validated = $request->validate([
-                'Password' => 'required|string|min:6',
+                'Password' => 'required|string|min:6|alpha_num',
+            ], [
+                'Password.alpha_num' => 'Password hanya boleh terdiri dari huruf dan angka (tidak boleh ada simbol).'
             ]);
 
             // update hanya password

@@ -10,6 +10,7 @@ use App\Http\Controllers\StokBahanMedisController;
 use App\Http\Controllers\StokBahanInfusController;
 use App\Http\Controllers\StokBarangApotekController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\PaketBundlingController;
 
 //LOGIN
 Route::post('/login', [AuthController::class, 'login']);
@@ -55,5 +56,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Stok Barang Apotek
     Route::get('/stok-barang-apotek/next-number', [StokBarangApotekController::class, 'getNextNumber']);
     Route::apiResource('stok-barang-apotek', StokBarangApotekController::class);
+
+    // Paket Bundling
+    Route::apiResource('paket-bundling', PaketBundlingController::class);
 });
 
