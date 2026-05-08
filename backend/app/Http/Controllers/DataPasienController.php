@@ -173,7 +173,7 @@ class DataPasienController extends Controller
             if (array_key_exists('Tipe_Member', $validated) && empty($validated['Tipe_Member'])) {
                 $validated['Tipe_Member'] = 'Non Member';
             } elseif (!array_key_exists('Tipe_Member', $validated)) {
-                $validated['Tipe_Member'] = $dataPasien->Tipe_Member;
+                $validated['Tipe_Member'] = $dataPasien->Tipe_member ?? 'Non Member';
             }
             
             if (isset($validated['Jenis_Kelamin'])) {
