@@ -58,6 +58,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('stok-barang-apotek', StokBarangApotekController::class);
 
     // Paket Bundling
+    Route::get('/paket-bundling/next-number', [PaketBundlingController::class, 'getNextNumber']);
     Route::apiResource('paket-bundling', PaketBundlingController::class);
 });
 

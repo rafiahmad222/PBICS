@@ -10,6 +10,30 @@ use Illuminate\Support\Facades\DB;
 class PaketBundlingController extends Controller
 {
     /**
+     * Get the next sequence number for Kode_paket
+     */
+    public function getNextNumber()
+    {
+        $lastPaket = PaketBundling::orderBy('id', 'desc')->first();
+        
+        if (!$lastPaket) {
+            $nextNumber = 'PKT-001';
+        } else {
+            // Asumsi format PKT-001
+            $lastCode = $lastPaket->Kode_paket;
+            $number = (int) substr($lastCode, 4);
+            $nextNumber = 'PKT-' . str_pad($number + 1, 3, '0', STR_PAD_LEFT);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'next_number' => $nextNumber
+            ]
+        ]);
+    }
+
+    /**
      * Display a listing of the resource.
      */
     public function index()
@@ -31,7 +55,6 @@ class PaketBundlingController extends Controller
     {
         try {
             $validated = $request->validate([
-                'Kode_paket' => 'required|string|max:225|unique:paket_bundlings',
                 'Nama_paket' => 'required|string|max:100',
                 'Deskripsi' => 'nullable|string',
                 'Harga_paket' => 'required|numeric',
@@ -40,8 +63,6 @@ class PaketBundlingController extends Controller
                 'produks.*.stok_produk_id' => 'required|exists:stok_produks,id',
                 'produks.*.Jumlah' => 'required|integer|min:1',
             ], [
-                'Kode_paket.required' => 'Kode paket wajib diisi.',
-                'Kode_paket.unique' => 'Kode paket sudah digunakan.',
                 'Nama_paket.required' => 'Nama paket wajib diisi.',
                 'Harga_paket.required' => 'Harga paket wajib diisi.',
                 'Harga_paket.numeric' => 'Harga paket harus berupa angka.',
@@ -56,8 +77,18 @@ class PaketBundlingController extends Controller
 
             DB::beginTransaction();
 
+            // Auto-generate Kode_paket
+            $lastPaket = PaketBundling::orderBy('id', 'desc')->first();
+            if (!$lastPaket) {
+                $kodePaket = 'PKT-001';
+            } else {
+                $lastCode = $lastPaket->Kode_paket;
+                $number = (int) substr($lastCode, 4);
+                $kodePaket = 'PKT-' . str_pad($number + 1, 3, '0', STR_PAD_LEFT);
+            }
+
             $paket = PaketBundling::create([
-                'Kode_paket' => $validated['Kode_paket'],
+                'Kode_paket' => $kodePaket,
                 'Nama_paket' => $validated['Nama_paket'],
                 'Deskripsi' => $validated['Deskripsi'] ?? null,
                 'Harga_paket' => $validated['Harga_paket'],
