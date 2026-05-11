@@ -40,4 +40,9 @@ class Treatment extends Model
 
         return 'Available';
     }
+
+    public function paketTreatments()
+    {
+        return $this->belongsToMany(PaketTreatment::class, 'paket_treatment_details', 'treatment_id', 'paket_treatment_id');
+    }
 }
