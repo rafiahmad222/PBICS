@@ -13,6 +13,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PaketBundlingController;
 use App\Http\Controllers\TreatmentController;
 use App\Http\Controllers\PaketTreatmentController;
+use App\Http\Controllers\ReservasiController;
 
 //LOGIN
 Route::post('/login', [AuthController::class, 'login']);
@@ -70,5 +71,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Paket Treatment
     Route::get('/paket-treatment/next-number', [PaketTreatmentController::class, 'getNextNumber']);
     Route::apiResource('paket-treatment', PaketTreatmentController::class);
+
+    // Reservasi Treatment
+    Route::apiResource('reservasi', ReservasiController::class);
 });
 
