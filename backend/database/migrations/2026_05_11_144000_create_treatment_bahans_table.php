@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('treatment_bahans', function (Blueprint $table) {
             $table->id();
             $table->foreignId('treatment_id')->constrained('treatments')->onDelete('cascade');
-            $table->foreignId('stok_bahan_treatment_id')->constrained('stok_bahan_treatments')->onDelete('cascade');
+            $table->morphs('bahan');
             $table->integer('Jumlah');
             $table->timestamps();
         });

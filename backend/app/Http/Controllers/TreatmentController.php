@@ -30,9 +30,11 @@ class TreatmentController extends Controller
         try {
             $validated = $request->validate([
                 'Nama_treatment' => 'required|string|max:100',
+                'Kategori' => 'required|string|max:100',
                 'Harga' => 'required|numeric',
                 'bahan' => 'required|array|min:1',
-                'bahan.*.stok_bahan_treatment_id' => 'required|exists:stok_bahan_treatments,id',
+                'bahan.*.bahan_id' => 'required|integer',
+                'bahan.*.bahan_type' => 'required|string|in:StokProduk,StokBarangApotek,StokBahanTreatment,StokBahanMedis,StokBahanInfus',
                 'bahan.*.Jumlah' => 'required|integer|min:1',
             ]);
 
@@ -48,17 +50,22 @@ class TreatmentController extends Controller
             $treatment = Treatment::create([
                 'Kode_treatment' => $kodeTreatment,
                 'Nama_treatment' => $validated['Nama_treatment'],
+                'Kategori' => $validated['Kategori'],
                 'Harga' => $validated['Harga'],
             ]);
 
-            // Format data untuk sync pivot table
-            $bahanSync = [];
+            // Format data untuk tabel pivot polymorphic
+            $bahanInsert = [];
             foreach ($validated['bahan'] as $item) {
-                $bahanSync[$item['stok_bahan_treatment_id']] = ['Jumlah' => $item['Jumlah']];
+                $bahanInsert[] = [
+                    'bahan_id' => $item['bahan_id'],
+                    'bahan_type' => 'App\\Models\\' . $item['bahan_type'],
+                    'Jumlah' => $item['Jumlah'],
+                ];
             }
 
-            // Simpan relasi ke tabel pivot
-            $treatment->bahan()->sync($bahanSync);
+            // Simpan relasi ke tabel treatment_bahans
+            $treatment->bahan()->createMany($bahanInsert);
 
             DB::commit();
 
@@ -120,9 +127,11 @@ class TreatmentController extends Controller
             $validated = $request->validate([
                 'Kode_treatment' => 'sometimes|required|string|max:100|unique:treatments,Kode_treatment,' . $id,
                 'Nama_treatment' => 'sometimes|required|string|max:100',
+                'Kategori' => 'sometimes|required|string|max:100',
                 'Harga' => 'sometimes|required|numeric',
                 'bahan' => 'sometimes|required|array|min:1',
-                'bahan.*.stok_bahan_treatment_id' => 'required_with:bahan|exists:stok_bahan_treatments,id',
+                'bahan.*.bahan_id' => 'required_with:bahan|integer',
+                'bahan.*.bahan_type' => 'required_with:bahan|string|in:StokProduk,StokBarangApotek,StokBahanTreatment,StokBahanMedis,StokBahanInfus',
                 'bahan.*.Jumlah' => 'required_with:bahan|integer|min:1',
             ]);
 
@@ -131,16 +140,22 @@ class TreatmentController extends Controller
             $treatment->update([
                 'Kode_treatment' => $validated['Kode_treatment'] ?? $treatment->Kode_treatment,
                 'Nama_treatment' => $validated['Nama_treatment'] ?? $treatment->Nama_treatment,
+                'Kategori' => $validated['Kategori'] ?? $treatment->Kategori,
                 'Harga' => $validated['Harga'] ?? $treatment->Harga,
             ]);
 
             // Jika ada update pada list bahan
             if (isset($validated['bahan'])) {
-                $bahanSync = [];
+                $treatment->bahan()->delete();
+                $bahanInsert = [];
                 foreach ($validated['bahan'] as $item) {
-                    $bahanSync[$item['stok_bahan_treatment_id']] = ['Jumlah' => $item['Jumlah']];
+                    $bahanInsert[] = [
+                        'bahan_id' => $item['bahan_id'],
+                        'bahan_type' => 'App\\Models\\' . $item['bahan_type'],
+                        'Jumlah' => $item['Jumlah'],
+                    ];
                 }
-                $treatment->bahan()->sync($bahanSync);
+                $treatment->bahan()->createMany($bahanInsert);
             }
 
             DB::commit();

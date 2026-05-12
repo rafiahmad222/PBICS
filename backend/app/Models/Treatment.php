@@ -12,6 +12,7 @@ class Treatment extends Model
     protected $fillable = [
         'Kode_treatment',
         'Nama_treatment',
+        'Kategori',
         'Harga'
     ];
 
@@ -19,9 +20,7 @@ class Treatment extends Model
 
     public function bahan()
     {
-        return $this->belongsToMany(StokBahanTreatment::class, 'treatment_bahans', 'treatment_id', 'stok_bahan_treatment_id')
-                    ->withPivot('Jumlah')
-                    ->withTimestamps();
+        return $this->hasMany(TreatmentBahan::class);
     }
 
     public function getStatusAttribute()
@@ -31,9 +30,10 @@ class Treatment extends Model
             return 'Available';
         }
 
-        foreach ($this->bahan as $bahan) {
-            // If any required material's stock is less than required amount, return Non Available
-            if ($bahan->Stok < $bahan->pivot->Jumlah) {
+        foreach ($this->bahan as $treatmentBahan) {
+            $item = $treatmentBahan->bahan; // gets the polymorphic related model
+            // If the item doesn't exist or its stock is less than required amount, return Non Available
+            if (!$item || $item->Stok < $treatmentBahan->Jumlah) {
                 return 'Non Available';
             }
         }

@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('Kode_treatment', 100);
             $table->string('Nama_treatment', 100);
+            $table->string('Kategori', 100);
             $table->decimal('Harga', 15, 2);
             $table->timestamps();
         });
