@@ -45,4 +45,10 @@ class Treatment extends Model
     {
         return $this->belongsToMany(PaketTreatment::class, 'paket_treatment_details', 'treatment_id', 'paket_treatment_id');
     }
+
+    public function rekamMedis()
+    {
+        return $this->belongsToMany(RekamMedis::class, 'rekam_medis_treatments', 'treatment_id', 'rekam_medis_id')
+                    ->withTimestamps();
+    }
 }

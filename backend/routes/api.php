@@ -14,6 +14,7 @@ use App\Http\Controllers\PaketBundlingController;
 use App\Http\Controllers\TreatmentController;
 use App\Http\Controllers\PaketTreatmentController;
 use App\Http\Controllers\ReservasiController;
+use App\Http\Controllers\RekamMedisController;
 
 //LOGIN
 Route::post('/login', [AuthController::class, 'login']);
@@ -72,7 +73,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/paket-treatment/next-number', [PaketTreatmentController::class, 'getNextNumber']);
     Route::apiResource('paket-treatment', PaketTreatmentController::class);
 
+    // Rekam Medis
+    Route::apiResource('rekam-medis', RekamMedisController::class);
+
     // Reservasi Treatment
     Route::apiResource('reservasi', ReservasiController::class);
 });
-

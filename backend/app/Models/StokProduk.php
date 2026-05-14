@@ -27,4 +27,11 @@ class StokProduk extends Model
                     ->withPivot('Jumlah')
                     ->withTimestamps();
     }
+
+    public function rekamMedis()
+    {
+        return $this->belongsToMany(RekamMedis::class, 'rekam_medis_reseps', 'stok_produk_id', 'rekam_medis_id')
+                    ->withPivot('jumlah')
+                    ->withTimestamps();
+    }
 }

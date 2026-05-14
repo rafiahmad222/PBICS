@@ -41,4 +41,9 @@ class DataKaryawan extends Authenticatable
     {
         return $this->Password;
     }
+
+    public function rekamMedis()
+    {
+        return $this->hasMany(RekamMedis::class, 'dokter_id');
+    }
 }

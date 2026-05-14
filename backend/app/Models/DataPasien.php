@@ -38,4 +38,9 @@ class DataPasien extends Model
     {
         return $this->belongsTo(Kec::class, 'Kec_id');
     }
+
+    public function rekamMedis()
+    {
+        return $this->hasMany(RekamMedis::class, 'data_pasien_id');
+    }
 }
