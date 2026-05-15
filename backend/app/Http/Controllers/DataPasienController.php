@@ -102,7 +102,9 @@ class DataPasienController extends Controller
 
             $validated['no_RM'] = $noRM;
 
-            if (empty($validated['Tipe_Member'])) {
+            if (!empty($validated['no_member'])) {
+                $validated['Tipe_Member'] = 'Member';
+            } elseif (empty($validated['Tipe_Member'])) {
                 $validated['Tipe_Member'] = 'Non Member';
             }
 
@@ -170,7 +172,9 @@ class DataPasienController extends Controller
                 'Kec_id' => 'sometimes|required|exists:Kec,id',
             ]);
 
-            if (array_key_exists('Tipe_Member', $validated) && empty($validated['Tipe_Member'])) {
+            if (!empty($validated['no_member'])) {
+                $validated['Tipe_Member'] = 'Member';
+            } elseif (array_key_exists('Tipe_Member', $validated) && empty($validated['Tipe_Member'])) {
                 $validated['Tipe_Member'] = 'Non Member';
             } elseif (!array_key_exists('Tipe_Member', $validated)) {
                 $validated['Tipe_Member'] = $dataPasien->Tipe_member ?? 'Non Member';
