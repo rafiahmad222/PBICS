@@ -15,6 +15,7 @@ use App\Http\Controllers\TreatmentController;
 use App\Http\Controllers\PaketTreatmentController;
 use App\Http\Controllers\ReservasiController;
 use App\Http\Controllers\RekamMedisController;
+use App\Http\Controllers\TransaksiController;
 
 //LOGIN
 Route::post('/login', [AuthController::class, 'login']);
@@ -78,4 +79,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Reservasi Treatment
     Route::apiResource('reservasi', ReservasiController::class);
+
+    // Transaksi (PO Produk)
+    Route::post('/transaksi/{id}/approve', [TransaksiController::class, 'approve']);
+    Route::apiResource('transaksi', TransaksiController::class);
 });
