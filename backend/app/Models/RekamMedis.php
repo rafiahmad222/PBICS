@@ -26,6 +26,21 @@ class RekamMedis extends Model
         'gambar_sesudah',
     ];
 
+    protected $appends = [
+        'gambar_sebelum_url',
+        'gambar_sesudah_url',
+    ];
+
+    public function getGambarSebelumUrlAttribute()
+    {
+        return $this->gambar_sebelum ? asset('storage/' . $this->gambar_sebelum) : null;
+    }
+
+    public function getGambarSesudahUrlAttribute()
+    {
+        return $this->gambar_sesudah ? asset('storage/' . $this->gambar_sesudah) : null;
+    }
+
     public function pasien()
     {
         return $this->belongsTo(DataPasien::class, 'data_pasien_id');
