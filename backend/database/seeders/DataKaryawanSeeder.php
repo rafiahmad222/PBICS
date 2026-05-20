@@ -17,9 +17,27 @@ class DataKaryawanSeeder extends Seeder
     {
         $faker = Faker::create('id_ID');
 
+        // Membuat data Super Admin secara manual (tanpa faker)
+        DataKaryawan::create([
+            'NamaLengkap_karyawan' => 'Super Admin PBICS',
+            'Nomor_Identitas' => '1234567890123456',
+            'kode_karyawan' => 'SAD-001',
+            'Tanggal_Lahir' => '1995-01-01',
+            'Tempat_Lahir' => 'Jember',
+            'Alamat' => 'Jl. PB Sudirman No. 1, Jember',
+            'Divisi' => 'Super Admin',
+            'Jabatan' => null,
+            'Cabang' => 'Jember',
+            'Email' => 'superadmin@gmail.com',
+            'No_Telp' => '081234567890',
+            'Username' => 'superadmin',
+            'Password' => Hash::make('password123'),
+            'Tanggal_bergabung' => '2021-01-01',
+        ]);
+
         $counters = [
             'OWN' => 1,
-            'SAD' => 1,
+            'SAD' => 2, // Mulai dari 2 karena SAD-001 sudah digunakan secara manual
             'LD' => 1,
             'STF' => 1,
         ];
