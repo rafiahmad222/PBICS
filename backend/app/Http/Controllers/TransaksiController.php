@@ -56,82 +56,172 @@ class TransaksiController extends Controller
 
             DB::beginTransaction();
 
-            // Auto generate No Faktur PB-yy-mm-dd/001
-            $today = Carbon::now()->format('y-m-d');
-            $lastTransaksi = Transaksi::whereDate('created_at', Carbon::today())
-                                      ->orderBy('no_faktur', 'desc')
-                                      ->first();
-            if ($lastTransaksi) {
-                $parts = explode('/', $lastTransaksi->no_faktur);
-                $lastNumber = isset($parts[1]) ? (int)$parts[1] : 0;
-                $newNumber = $lastNumber + 1;
-            } else {
-                $newNumber = 1;
-            }
-            $noFaktur = 'PB-' . $today . '/' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
-
-            // Fetch Karyawan dari auth pengguna yang sedang login
-            // karena ada requirement "Nama karyawan dari data karyawan yang sedang melakukan transaksi"
             $karyawanId = Auth::id(); 
             if (!$karyawanId) {
                 // fallback if not using sanctum properly in testing
                 $karyawanId = \App\Models\DataKaryawan::first()->id ?? null;
             }
 
-            $transaksi = Transaksi::create([
-                'no_faktur' => $noFaktur,
-                'data_pasien_id' => $validated['data_pasien_id'] ?? null,
-                'nama_pasien_distributor' => $validated['nama_pasien_distributor'],
-                'alamat_pengiriman' => $validated['alamat_pengiriman'] ?? null,
-                'karyawan_id' => $karyawanId,
-                'tanggal_transaksi' => $validated['tanggal_transaksi'],
-                'catatan_pesanan' => $validated['catatan_pesanan'] ?? null,
-                'status' => 'Pending',
-                'total_keseluruhan' => 0
-            ]);
-
-            $totalKeseluruhan = 0;
-            $detailsInsert = [];
+            $itemsProduk = [];
+            $itemsTreatment = [];
 
             foreach ($validated['details'] as $item) {
-                $itemClass = 'App\\Models\\' . $item['item_type'];
-                $modelItem = $itemClass::find($item['item_id']);
-                
-                if (!$modelItem) {
-                    throw ValidationException::withMessages(['details' => 'Item tidak ditemukan']);
+                if ($item['item_type'] === 'StokProduk') {
+                    $itemsProduk[] = $item;
+                } elseif ($item['item_type'] === 'Treatment') {
+                    $itemsTreatment[] = $item;
                 }
-
-                // Field harga pada StokProduk / Treatment
-                $harga = $modelItem->Harga;
-                $namaItem = $item['item_type'] === 'StokProduk' ? $modelItem->Nama_produk : $modelItem->Nama_treatment;
-                
-                $totalHarga = $harga * $item['qty'];
-                $totalKeseluruhan += $totalHarga;
-
-                $detailsInsert[] = [
-                    'id' => \Illuminate\Support\Str::uuid()->toString(),
-                    'transaksi_id' => $transaksi->id,
-                    'itemable_type' => $itemClass,
-                    'itemable_id' => $item['item_id'],
-                    'nama_item' => $namaItem,
-                    'qty' => $item['qty'],
-                    'harga' => $harga,
-                    'total_harga' => $totalHarga,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ];
             }
 
-            \App\Models\TransaksiDetail::insert($detailsInsert);
-            
-            $transaksi->update(['total_keseluruhan' => $totalKeseluruhan]);
+            $createdTransaksis = [];
+            $today = Carbon::now()->format('y-m-d');
+
+            // 1. Process Treatment
+            if (count($itemsTreatment) > 0) {
+                $lastTransaksi = Transaksi::whereDate('created_at', Carbon::today())
+                                          ->where('no_resi', 'like', 'POL-%')
+                                          ->orderBy('no_resi', 'desc')
+                                          ->first();
+                if ($lastTransaksi) {
+                    $parts = explode('/', $lastTransaksi->no_resi);
+                    $lastNumber = isset($parts[1]) ? (int)$parts[1] : 0;
+                    $newNumber = $lastNumber + 1;
+                } else {
+                    $newNumber = 1;
+                }
+                $noResiPOL = 'POL-' . $today . '/' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+
+                $transaksiTreatment = Transaksi::create([
+                    'no_resi' => $noResiPOL,
+                    'data_pasien_id' => $validated['data_pasien_id'] ?? null,
+                    'nama_pasien_distributor' => $validated['nama_pasien_distributor'],
+                    'alamat_pengiriman' => $validated['alamat_pengiriman'] ?? null,
+                    'karyawan_id' => $karyawanId,
+                    'tanggal_transaksi' => $validated['tanggal_transaksi'],
+                    'catatan_pesanan' => $validated['catatan_pesanan'] ?? null,
+                    'status' => 'Selesai',
+                    'total_keseluruhan' => 0
+                ]);
+
+                $totalKeseluruhan = 0;
+                $detailsInsert = [];
+
+                foreach ($itemsTreatment as $item) {
+                    $itemClass = 'App\\Models\\' . $item['item_type'];
+                    $modelItem = $itemClass::with('bahan')->find($item['item_id']);
+                    
+                    if (!$modelItem) {
+                        throw ValidationException::withMessages(['details' => 'Item tidak ditemukan']);
+                    }
+
+                    $harga = $modelItem->Harga;
+                    $namaItem = $modelItem->Nama_treatment;
+                    
+                    $totalHarga = $harga * $item['qty'];
+                    $totalKeseluruhan += $totalHarga;
+
+                    $detailsInsert[] = [
+                        'id' => \Illuminate\Support\Str::uuid()->toString(),
+                        'transaksi_id' => $transaksiTreatment->id,
+                        'itemable_type' => $itemClass,
+                        'itemable_id' => $item['item_id'],
+                        'nama_item' => $namaItem,
+                        'qty' => $item['qty'],
+                        'harga' => $harga,
+                        'total_harga' => $totalHarga,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+
+                    // Kurangi stok bahan
+                    if ($modelItem->bahan) {
+                        foreach ($modelItem->bahan as $bahanRelation) {
+                            $bahanModelClass = $bahanRelation->bahan_type;
+                            $bahan = $bahanModelClass::find($bahanRelation->bahan_id);
+                            if ($bahan) {
+                                $pengurangan = $item['qty'] * $bahanRelation->Jumlah;
+                                $bahan->Stok -= $pengurangan;
+                                $bahan->save();
+                            }
+                        }
+                    }
+                }
+
+                \App\Models\TransaksiDetail::insert($detailsInsert);
+                $transaksiTreatment->update(['total_keseluruhan' => $totalKeseluruhan]);
+                $createdTransaksis[] = $transaksiTreatment->load('details');
+            }
+
+            // 2. Process Produk
+            if (count($itemsProduk) > 0) {
+                $lastTransaksi = Transaksi::whereDate('created_at', Carbon::today())
+                                          ->where('no_resi', 'like', 'PO-%')
+                                          ->where('no_resi', 'not like', 'POL-%')
+                                          ->orderBy('no_resi', 'desc')
+                                          ->first();
+                if ($lastTransaksi) {
+                    $parts = explode('/', $lastTransaksi->no_resi);
+                    $lastNumber = isset($parts[1]) ? (int)$parts[1] : 0;
+                    $newNumber = $lastNumber + 1;
+                } else {
+                    $newNumber = 1;
+                }
+                $noResiPO = 'PO-' . $today . '/' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+
+                $transaksiProduk = Transaksi::create([
+                    'no_resi' => $noResiPO,
+                    'data_pasien_id' => $validated['data_pasien_id'] ?? null,
+                    'nama_pasien_distributor' => $validated['nama_pasien_distributor'],
+                    'alamat_pengiriman' => $validated['alamat_pengiriman'] ?? null,
+                    'karyawan_id' => $karyawanId,
+                    'tanggal_transaksi' => $validated['tanggal_transaksi'],
+                    'catatan_pesanan' => $validated['catatan_pesanan'] ?? null,
+                    'status' => 'Pending',
+                    'total_keseluruhan' => 0
+                ]);
+
+                $totalKeseluruhan = 0;
+                $detailsInsert = [];
+
+                foreach ($itemsProduk as $item) {
+                    $itemClass = 'App\\Models\\' . $item['item_type'];
+                    $modelItem = $itemClass::find($item['item_id']);
+                    
+                    if (!$modelItem) {
+                        throw ValidationException::withMessages(['details' => 'Item tidak ditemukan']);
+                    }
+
+                    $harga = $modelItem->Harga;
+                    $namaItem = $modelItem->Nama_produk;
+                    
+                    $totalHarga = $harga * $item['qty'];
+                    $totalKeseluruhan += $totalHarga;
+
+                    $detailsInsert[] = [
+                        'id' => \Illuminate\Support\Str::uuid()->toString(),
+                        'transaksi_id' => $transaksiProduk->id,
+                        'itemable_type' => $itemClass,
+                        'itemable_id' => $item['item_id'],
+                        'nama_item' => $namaItem,
+                        'qty' => $item['qty'],
+                        'harga' => $harga,
+                        'total_harga' => $totalHarga,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                }
+
+                \App\Models\TransaksiDetail::insert($detailsInsert);
+                $transaksiProduk->update(['total_keseluruhan' => $totalKeseluruhan]);
+                $createdTransaksis[] = $transaksiProduk->load('details');
+            }
 
             DB::commit();
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'PO Produk berhasil dibuat (Pending)',
-                'data' => $transaksi->load('details')
+                'message' => 'Transaksi berhasil dibuat',
+                'data' => $createdTransaksis
             ], 201);
 
         } catch (ValidationException $e) {
@@ -283,24 +373,24 @@ class TransaksiController extends Controller
         DB::beginTransaction();
 
         try {
-            // Auto generate No Resi PO-yy-mm-dd/001
+            // Auto generate No Faktur PB-yy-mm-dd/001
             $today = Carbon::now()->format('y-m-d');
-            $lastResi = Transaksi::whereNotNull('no_resi')
+            $lastFaktur = Transaksi::whereNotNull('no_faktur')
                                  ->whereDate('updated_at', Carbon::today())
-                                 ->orderBy('no_resi', 'desc')
+                                 ->orderBy('no_faktur', 'desc')
                                  ->first();
-            if ($lastResi) {
-                $parts = explode('/', $lastResi->no_resi);
+            if ($lastFaktur) {
+                $parts = explode('/', $lastFaktur->no_faktur);
                 $lastNumber = isset($parts[1]) ? (int)$parts[1] : 0;
                 $newNumber = $lastNumber + 1;
             } else {
                 $newNumber = 1;
             }
-            $noResi = 'PO-' . $today . '/' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+            $noFaktur = 'PB-' . $today . '/' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
 
             // Update Transaksi
             $transaksi->update([
-                'no_resi' => $noResi,
+                'no_faktur' => $noFaktur,
                 'status' => 'Selesai'
             ]);
 
@@ -312,28 +402,15 @@ class TransaksiController extends Controller
                         $produk->Stok -= $detail->qty;
                         $produk->save();
                     }
-                } elseif ($detail->itemable_type === 'App\Models\Treatment') {
-                    $treatment = Treatment::with('bahan')->find($detail->itemable_id);
-                    if ($treatment && $treatment->bahan) {
-                        foreach ($treatment->bahan as $bahanRelation) {
-                            $bahanModelClass = $bahanRelation->bahan_type;
-                            $bahan = $bahanModelClass::find($bahanRelation->bahan_id);
-                            if ($bahan) {
-                                // Kurangi stok bahan: qty transaksi * jumlah bahan per treatment
-                                $pengurangan = $detail->qty * $bahanRelation->Jumlah;
-                                $bahan->Stok -= $pengurangan;
-                                $bahan->save();
-                            }
-                        }
-                    }
                 }
+                // Hapus logic Treatment karena Treatment otomatis diselesaikan saat pembuatan transaksi di CS
             }
 
             DB::commit();
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Transaksi berhasil diselesaikan. No Resi di-generate dan stok telah dikurangi.',
+                'message' => 'Transaksi berhasil diselesaikan. No Faktur di-generate dan stok telah dikurangi.',
                 'data' => $transaksi->load('details.itemable')
             ]);
         } catch (\Exception $e) {

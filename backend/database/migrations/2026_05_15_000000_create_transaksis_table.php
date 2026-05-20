@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('transaksis', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('no_faktur', 50)->unique();
-            $table->string('no_resi', 50)->unique()->nullable();
+            $table->string('no_faktur', 50)->unique()->nullable();
+            $table->string('no_resi', 50)->unique();
             
             // Relasi ke tabel pasien (bisa null jika dari distributor luar yg tidak terdaftar)
             $table->uuid('data_pasien_id')->nullable();
@@ -34,8 +34,8 @@ return new class extends Migration
             $table->timestamps();
 
             // Foreign keys
-            // $table->foreign('data_pasien_id')->references('id')->on('data_pasiens')->onDelete('set null');
-            // $table->foreign('karyawan_id')->references('id')->on('data_karyawan')->onDelete('cascade');
+            $table->foreign('data_pasien_id')->references('id')->on('data_pasiens')->onDelete('set null');
+            $table->foreign('karyawan_id')->references('id')->on('data_karyawan')->onDelete('cascade');
         });
     }
 
