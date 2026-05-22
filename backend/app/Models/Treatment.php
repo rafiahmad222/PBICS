@@ -25,14 +25,12 @@ class Treatment extends Model
 
     public function getStatusAttribute()
     {
-        // If there are no related materials, we assume it's available.
         if ($this->bahan->isEmpty()) {
             return 'Available';
         }
 
         foreach ($this->bahan as $treatmentBahan) {
-            $item = $treatmentBahan->bahan; // gets the polymorphic related model
-            // If the item doesn't exist or its stock is less than required amount, return Non Available
+            $item = $treatmentBahan->bahan; 
             if (!$item || $item->Stok < $treatmentBahan->Jumlah) {
                 return 'Non Available';
             }

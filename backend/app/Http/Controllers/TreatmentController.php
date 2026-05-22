@@ -54,7 +54,6 @@ class TreatmentController extends Controller
                 'Harga' => $validated['Harga'],
             ]);
 
-            // Format data untuk tabel pivot polymorphic
             $bahanInsert = [];
             foreach ($validated['bahan'] as $item) {
                 $bahanInsert[] = [
@@ -64,7 +63,6 @@ class TreatmentController extends Controller
                 ];
             }
 
-            // Simpan relasi ke tabel treatment_bahans
             $treatment->bahan()->createMany($bahanInsert);
 
             DB::commit();
@@ -144,7 +142,6 @@ class TreatmentController extends Controller
                 'Harga' => $validated['Harga'] ?? $treatment->Harga,
             ]);
 
-            // Jika ada update pada list bahan
             if (isset($validated['bahan'])) {
                 $treatment->bahan()->delete();
                 $bahanInsert = [];

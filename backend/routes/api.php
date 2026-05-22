@@ -16,6 +16,7 @@ use App\Http\Controllers\PaketTreatmentController;
 use App\Http\Controllers\ReservasiController;
 use App\Http\Controllers\RekamMedisController;
 use App\Http\Controllers\TransaksiController;
+use App\Http\Controllers\StokRacikanController;
 
 //LOGIN
 Route::post('/login', [AuthController::class, 'login']);
@@ -61,6 +62,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // Stok Barang Apotek
     Route::get('/stok-barang-apotek/next-number', [StokBarangApotekController::class, 'getNextNumber']);
     Route::apiResource('stok-barang-apotek', StokBarangApotekController::class);
+
+    // Stok Racikan
+    Route::apiResource('stok-racikan', StokRacikanController::class);
 
     // Paket Bundling
     Route::get('/paket-bundling/next-number', [PaketBundlingController::class, 'getNextNumber']);

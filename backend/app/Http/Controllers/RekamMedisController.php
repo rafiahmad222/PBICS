@@ -9,12 +9,18 @@ use Illuminate\Support\Facades\DB;
 
 class RekamMedisController extends Controller
 {
+    /**
+     * Display a listing of the resource.
+     */
     public function index()
     {
         $data = RekamMedis::with(['pasien', 'dokter', 'treatments', 'reseps'])->get();
         return response()->json($data, 200);
     }
 
+    /**
+     * Store a newly created resource in storage.
+     */
     public function store(Request $request)
     {
         $request->validate([
@@ -78,7 +84,10 @@ class RekamMedisController extends Controller
             return response()->json(['message' => 'Terjadi kesalahan', 'error' => $e->getMessage()], 500);
         }
     }
-
+    
+    /**
+     * Display the specified resource.
+     */
     public function show($id)
     {
         $rekamMedis = RekamMedis::with(['pasien', 'dokter', 'treatments', 'reseps'])->find($id);
@@ -88,6 +97,9 @@ class RekamMedisController extends Controller
         return response()->json($rekamMedis, 200);
     }
 
+    /**
+     * Update the specified resource in storage.
+     */
     public function update(Request $request, $id)
     {
         $rekamMedis = RekamMedis::find($id);

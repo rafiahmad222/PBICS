@@ -21,7 +21,6 @@ class TransaksiController extends Controller
     {
         $query = Transaksi::with(['pasien', 'karyawan', 'details.itemable']);
 
-        // Filter berdasarkan status jika ada
         if ($request->has('status')) {
             $query->where('status', $request->status);
         }
@@ -58,7 +57,6 @@ class TransaksiController extends Controller
 
             $karyawanId = Auth::id(); 
             if (!$karyawanId) {
-                // fallback if not using sanctum properly in testing
                 $karyawanId = \App\Models\DataKaryawan::first()->id ?? null;
             }
 
@@ -76,7 +74,7 @@ class TransaksiController extends Controller
             $createdTransaksis = [];
             $today = Carbon::now()->format('y-m-d');
 
-            // 1. Process Treatment
+            // Process Treatment
             if (count($itemsTreatment) > 0) {
                 $lastTransaksi = Transaksi::whereDate('created_at', Carbon::today())
                                           ->where('no_resi', 'like', 'POL-%')
@@ -152,7 +150,7 @@ class TransaksiController extends Controller
                 $createdTransaksis[] = $transaksiTreatment->load('details');
             }
 
-            // 2. Process Produk
+            // Process Produk
             if (count($itemsProduk) > 0) {
                 $lastTransaksi = Transaksi::whereDate('created_at', Carbon::today())
                                           ->where('no_resi', 'like', 'PO-%')
@@ -290,7 +288,6 @@ class TransaksiController extends Controller
 
             DB::beginTransaction();
 
-            // Hapus detail lama dan masukkan yang baru
             $transaksi->details()->delete();
 
             $totalKeseluruhan = 0;
@@ -403,7 +400,6 @@ class TransaksiController extends Controller
                         $produk->save();
                     }
                 }
-                // Hapus logic Treatment karena Treatment otomatis diselesaikan saat pembuatan transaksi di CS
             }
 
             DB::commit();
