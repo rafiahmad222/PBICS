@@ -14,6 +14,8 @@ class Transaksi extends Model
     public $incrementing = false;
 
     protected $fillable = [
+        'order_id',
+        'tipe_transaksi',
         'no_faktur',
         'no_resi',
         'data_pasien_id',

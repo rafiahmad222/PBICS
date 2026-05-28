@@ -48,7 +48,7 @@ class TransaksiController extends Controller
                 'catatan_pesanan' => 'nullable|string|max:100',
                 
                 'details' => 'required|array|min:1',
-                'details.*.item_type' => 'required|string|in:StokProduk,Treatment',
+                'details.*.item_type' => 'required|string|in:StokProduk,Treatment,StokRacikan',
                 'details.*.item_id' => 'required|integer',
                 'details.*.qty' => 'required|integer|min:1',
             ]);
@@ -62,35 +62,41 @@ class TransaksiController extends Controller
 
             $itemsProduk = [];
             $itemsTreatment = [];
+            $itemsRacikan = [];
 
             foreach ($validated['details'] as $item) {
                 if ($item['item_type'] === 'StokProduk') {
                     $itemsProduk[] = $item;
                 } elseif ($item['item_type'] === 'Treatment') {
                     $itemsTreatment[] = $item;
+                } elseif ($item['item_type'] === 'StokRacikan') {
+                    $itemsRacikan[] = $item;
                 }
             }
 
             $createdTransaksis = [];
-            $today = Carbon::now()->format('y-m-d');
+            $todayYmd = Carbon::now()->format('ymd');
+            $orderId = 'ORD-' . $todayYmd . '-' . str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
 
             // Process Treatment
             if (count($itemsTreatment) > 0) {
-                $lastTransaksi = Transaksi::whereDate('created_at', Carbon::today())
-                                          ->where('no_resi', 'like', 'POL-%')
-                                          ->orderBy('no_resi', 'desc')
-                                          ->first();
-                if ($lastTransaksi) {
-                    $parts = explode('/', $lastTransaksi->no_resi);
-                    $lastNumber = isset($parts[1]) ? (int)$parts[1] : 0;
-                    $newNumber = $lastNumber + 1;
+                $prefixTreatment = 'PB-' . $todayYmd . '2';
+                $lastFakturTreatment = Transaksi::where('no_faktur', 'like', $prefixTreatment . '%')
+                                                ->orderBy('no_faktur', 'desc')
+                                                ->first();
+                if ($lastFakturTreatment) {
+                    $lastSeq = (int) substr($lastFakturTreatment->no_faktur, -3);
+                    $newSeq = $lastSeq + 1;
                 } else {
-                    $newNumber = 1;
+                    $newSeq = 1;
                 }
-                $noResiPOL = 'POL-' . $today . '/' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+                $noFakturTreatment = 'PB-' . $todayYmd . '2' . str_pad($newSeq, 3, '0', STR_PAD_LEFT);
 
                 $transaksiTreatment = Transaksi::create([
-                    'no_resi' => $noResiPOL,
+                    'order_id' => $orderId,
+                    'tipe_transaksi' => 'Treatment',
+                    'no_resi' => null,
+                    'no_faktur' => $noFakturTreatment,
                     'data_pasien_id' => $validated['data_pasien_id'] ?? null,
                     'nama_pasien_distributor' => $validated['nama_pasien_distributor'],
                     'alamat_pengiriman' => $validated['alamat_pengiriman'] ?? null,
@@ -150,24 +156,90 @@ class TransaksiController extends Controller
                 $createdTransaksis[] = $transaksiTreatment->load('details');
             }
 
+            // Process Obat Racik
+            if (count($itemsRacikan) > 0) {
+                $prefixRacikan = 'PB-' . $todayYmd . '3';
+                $lastFakturRacikan = Transaksi::where('no_faktur', 'like', $prefixRacikan . '%')
+                                              ->orderBy('no_faktur', 'desc')
+                                              ->first();
+                if ($lastFakturRacikan) {
+                    $lastSeq = (int) substr($lastFakturRacikan->no_faktur, -3);
+                    $newSeq = $lastSeq + 1;
+                } else {
+                    $newSeq = 1;
+                }
+                $noFakturRacikan = 'PB-' . $todayYmd . '3' . str_pad($newSeq, 3, '0', STR_PAD_LEFT);
+
+                $transaksiRacikan = Transaksi::create([
+                    'order_id' => $orderId,
+                    'tipe_transaksi' => 'Racikan',
+                    'no_resi' => null,
+                    'no_faktur' => $noFakturRacikan,
+                    'data_pasien_id' => $validated['data_pasien_id'] ?? null,
+                    'nama_pasien_distributor' => $validated['nama_pasien_distributor'],
+                    'alamat_pengiriman' => $validated['alamat_pengiriman'] ?? null,
+                    'karyawan_id' => $karyawanId,
+                    'tanggal_transaksi' => $validated['tanggal_transaksi'],
+                    'catatan_pesanan' => $validated['catatan_pesanan'] ?? null,
+                    'status' => 'Selesai',
+                    'total_keseluruhan' => 0
+                ]);
+
+                $totalKeseluruhan = 0;
+                $detailsInsert = [];
+
+                foreach ($itemsRacikan as $item) {
+                    $itemClass = 'App\\Models\\' . $item['item_type'];
+                    $modelItem = $itemClass::find($item['item_id']);
+                    
+                    if (!$modelItem) {
+                        throw ValidationException::withMessages(['details' => 'Item tidak ditemukan']);
+                    }
+
+                    $harga = $modelItem->harga ?? $modelItem->Harga;
+                    $namaItem = $modelItem->nama_obat_racik ?? $modelItem->Nama_obat_racik;
+                    
+                    $totalHarga = $harga * $item['qty'];
+                    $totalKeseluruhan += $totalHarga;
+
+                    $detailsInsert[] = [
+                        'id' => \Illuminate\Support\Str::uuid()->toString(),
+                        'transaksi_id' => $transaksiRacikan->id,
+                        'itemable_type' => $itemClass,
+                        'itemable_id' => $item['item_id'],
+                        'nama_item' => $namaItem,
+                        'qty' => $item['qty'],
+                        'harga' => $harga,
+                        'total_harga' => $totalHarga,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                }
+
+                \App\Models\TransaksiDetail::insert($detailsInsert);
+                $transaksiRacikan->update(['total_keseluruhan' => $totalKeseluruhan]);
+                $createdTransaksis[] = $transaksiRacikan->load('details');
+            }
+
             // Process Produk
             if (count($itemsProduk) > 0) {
-                $lastTransaksi = Transaksi::whereDate('created_at', Carbon::today())
-                                          ->where('no_resi', 'like', 'PO-%')
-                                          ->where('no_resi', 'not like', 'POL-%')
-                                          ->orderBy('no_resi', 'desc')
-                                          ->first();
-                if ($lastTransaksi) {
-                    $parts = explode('/', $lastTransaksi->no_resi);
-                    $lastNumber = isset($parts[1]) ? (int)$parts[1] : 0;
-                    $newNumber = $lastNumber + 1;
+                $prefixResiPO = 'PO-' . $todayYmd . '1';
+                $lastResiPO = Transaksi::where('no_resi', 'like', $prefixResiPO . '%')
+                                        ->orderBy('no_resi', 'desc')
+                                        ->first();
+                if ($lastResiPO) {
+                    $lastSeq = (int) substr($lastResiPO->no_resi, -3);
+                    $newSeq = $lastSeq + 1;
                 } else {
-                    $newNumber = 1;
+                    $newSeq = 1;
                 }
-                $noResiPO = 'PO-' . $today . '/' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+                $noResiPO = 'PO-' . $todayYmd . '1' . str_pad($newSeq, 3, '0', STR_PAD_LEFT);
 
                 $transaksiProduk = Transaksi::create([
+                    'order_id' => $orderId,
+                    'tipe_transaksi' => 'Produk',
                     'no_resi' => $noResiPO,
+                    'no_faktur' => null,
                     'data_pasien_id' => $validated['data_pasien_id'] ?? null,
                     'nama_pasien_distributor' => $validated['nama_pasien_distributor'],
                     'alamat_pengiriman' => $validated['alamat_pengiriman'] ?? null,
@@ -370,20 +442,19 @@ class TransaksiController extends Controller
         DB::beginTransaction();
 
         try {
-            // Auto generate No Faktur PB-yy-mm-dd/001
-            $today = Carbon::now()->format('y-m-d');
-            $lastFaktur = Transaksi::whereNotNull('no_faktur')
-                                 ->whereDate('updated_at', Carbon::today())
-                                 ->orderBy('no_faktur', 'desc')
-                                 ->first();
+            // Auto generate No Faktur PB-YYMMDD1xxx (hanya untuk Stok Produk)
+            $todayYmd = Carbon::now()->format('ymd');
+            $prefixFakturProduk = 'PB-' . $todayYmd . '1';
+            $lastFaktur = Transaksi::where('no_faktur', 'like', $prefixFakturProduk . '%')
+                                   ->orderBy('no_faktur', 'desc')
+                                   ->first();
             if ($lastFaktur) {
-                $parts = explode('/', $lastFaktur->no_faktur);
-                $lastNumber = isset($parts[1]) ? (int)$parts[1] : 0;
-                $newNumber = $lastNumber + 1;
+                $lastSeq = (int) substr($lastFaktur->no_faktur, -3);
+                $newSeq = $lastSeq + 1;
             } else {
-                $newNumber = 1;
+                $newSeq = 1;
             }
-            $noFaktur = 'PB-' . $today . '/' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+            $noFaktur = 'PB-' . $todayYmd . '1' . str_pad($newSeq, 3, '0', STR_PAD_LEFT);
 
             // Update Transaksi
             $transaksi->update([

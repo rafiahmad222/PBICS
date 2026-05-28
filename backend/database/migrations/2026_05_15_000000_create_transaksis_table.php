@@ -13,8 +13,10 @@ return new class extends Migration
     {
         Schema::create('transaksis', function (Blueprint $table) {
             $table->uuid('id')->primary();
+            $table->string('order_id', 50)->nullable();
+            $table->enum('tipe_transaksi', ['Produk', 'Treatment', 'Racikan'])->default('Produk');
             $table->string('no_faktur', 50)->unique()->nullable();
-            $table->string('no_resi', 50)->unique();
+            $table->string('no_resi', 50)->unique()->nullable();
             
             // Relasi ke tabel pasien (bisa null jika dari distributor luar yg tidak terdaftar)
             $table->uuid('data_pasien_id')->nullable();

@@ -19,6 +19,10 @@ use App\Http\Controllers\TransaksiController;
 use App\Http\Controllers\StokRacikanController;
 use App\Http\Controllers\AntreanRacikanController;
 
+/** PR
+ * ini bisa ditambahkan middleware lagi di setiap API yang ada
+ * penyesuain penggunaan API bisa diakses oleh aktor mana saja 
+ */
 //LOGIN
 Route::post('/login', [AuthController::class, 'login']);
 
