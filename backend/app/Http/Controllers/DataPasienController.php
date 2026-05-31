@@ -22,6 +22,8 @@ class DataPasienController extends Controller
             'Tipe_member',
             'no_member',
             'no_RM',
+            'no_Telp',
+            'Kec_id',
         );
 
         $pasiens = $query->latest()->paginate(10);
