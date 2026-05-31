@@ -18,6 +18,7 @@ use App\Http\Controllers\RekamMedisController;
 use App\Http\Controllers\TransaksiController;
 use App\Http\Controllers\StokRacikanController;
 use App\Http\Controllers\AntreanRacikanController;
+use App\Http\Controllers\LaporanPenjualanController;
 
 /** PR
  * ini bisa ditambahkan middleware lagi di setiap API yang ada
@@ -95,6 +96,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Transaksi (PO Produk)
     Route::post('/transaksi/{id}/approve', [TransaksiController::class, 'approve']);
     Route::apiResource('transaksi', TransaksiController::class);
+
+    // Laporan Penjualan
+    Route::get('/laporan-penjualan', [LaporanPenjualanController::class, 'index']);
+    Route::get('/laporan-penjualan/{id}', [LaporanPenjualanController::class, 'show']);
 
     // Activity Logs
     Route::get('/activity-logs', [\App\Http\Controllers\ActivityLogController::class, 'index']);
