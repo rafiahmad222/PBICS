@@ -95,4 +95,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Transaksi (PO Produk)
     Route::post('/transaksi/{id}/approve', [TransaksiController::class, 'approve']);
     Route::apiResource('transaksi', TransaksiController::class);
+
+    // Activity Logs
+    Route::get('/activity-logs', [\App\Http\Controllers\ActivityLogController::class, 'index']);
 });

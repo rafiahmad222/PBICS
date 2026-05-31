@@ -7,7 +7,10 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class DataPasien extends Model
 {
-    use HasUuids;
+    use HasUuids, \App\Traits\LogsActivity;
+
+    public static $logModule = 'Manajemen Pasien';
+    public static $logNameAttribute = 'Nama_pasien';
 
     protected $keyType = 'string';
     public $incrementing = false;

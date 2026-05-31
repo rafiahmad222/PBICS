@@ -8,7 +8,10 @@ use Laravel\Sanctum\HasApiTokens;
 
 class DataKaryawan extends Authenticatable
 {
-    use HasApiTokens, HasUuids;
+    use HasApiTokens, HasUuids, \App\Traits\LogsActivity;
+
+    public static $logModule = 'Manajemen Karyawan';
+    public static $logNameAttribute = 'NamaLengkap_karyawan';
 
     protected $table = 'data_karyawan';
 
