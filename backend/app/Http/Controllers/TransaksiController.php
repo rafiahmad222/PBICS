@@ -421,7 +421,7 @@ class TransaksiController extends Controller
     /**
      * Gudang Klik Simpan -> Selesaikan Pesanan, Generate No Resi, dan Kurangi Stok.
      */
-    public function approve($id)
+    public function approve(Request $request, $id)
     {
         $transaksi = Transaksi::with('details')->find($id);
 
@@ -442,6 +442,48 @@ class TransaksiController extends Controller
         DB::beginTransaction();
 
         try {
+            // Tangkap dan proses payload details jika dikirim dari frontend (Gudang edit jumlah / hapus barang)
+            if ($request->has('details') && is_array($request->details)) {
+                $sentDetails = collect($request->details);
+                $sentIds = $sentDetails->pluck('id')->filter()->toArray();
+
+                // Hapus record transaksi_details yang tidak ada di array details payload
+                if (!empty($sentIds)) {
+                    $transaksi->details()->whereNotIn('id', $sentIds)->delete();
+                } else {
+                    $transaksi->details()->delete();
+                }
+
+                $totalKeseluruhan = 0;
+                
+                // Timpa/update qty dan subtotal pada data transaksi_details lama
+                $updatedDetails = $transaksi->details()->get();
+                foreach ($updatedDetails as $detail) {
+                    $payloadItem = $sentDetails->firstWhere('id', $detail->id);
+                    if ($payloadItem) {
+                        $detail->qty = $payloadItem['qty'] ?? $detail->qty;
+                        
+                        if (isset($payloadItem['itemable_id'])) {
+                            $detail->itemable_id = $payloadItem['itemable_id'];
+                            $detail->itemable_type = $payloadItem['itemable_type'] ?? $detail->itemable_type;
+                            $detail->nama_item = $payloadItem['nama_item'] ?? $detail->nama_item;
+                            $detail->harga = $payloadItem['harga'] ?? $detail->harga;
+                        }
+
+                        $detail->total_harga = isset($payloadItem['subtotal']) ? $payloadItem['subtotal'] : ($detail->harga * $detail->qty);
+                        $detail->save();
+                        
+                        $totalKeseluruhan += $detail->total_harga;
+                    }
+                }
+                
+                // Hitung ulang total harga induk
+                $transaksi->update(['total_keseluruhan' => $totalKeseluruhan]);
+                
+                // Refresh relasi details karena ada perubahan
+                $transaksi->load('details');
+            }
+
             // Auto generate No Faktur PB-YYMMDD1xxx (hanya untuk Stok Produk)
             $todayYmd = Carbon::now()->format('ymd');
             $prefixFakturProduk = 'PB-' . $todayYmd . '1';
@@ -462,7 +504,7 @@ class TransaksiController extends Controller
                 'status' => 'Selesai'
             ]);
 
-            // Pengurangan Stok
+            // Pengurangan Stok menggunakan qty terbaru (jika sudah diedit gudang)
             foreach ($transaksi->details as $detail) {
                 if ($detail->itemable_type === 'App\Models\StokProduk') {
                     $produk = StokProduk::find($detail->itemable_id);
