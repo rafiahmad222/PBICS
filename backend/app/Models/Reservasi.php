@@ -10,6 +10,7 @@ class Reservasi extends Model
         'Tanggal_reservasi',
         'Jam_reservasi',
         'pasien_id',
+        'rekam_medis_id',
         'Nama_pasien',
         'No_Telp',
         'karyawan_id',
@@ -30,6 +31,11 @@ class Reservasi extends Model
         return $this->belongsTo(DataKaryawan::class, 'karyawan_id');
     }
 
+    public function rekamMedis()
+    {
+        return $this->belongsTo(RekamMedis::class, 'rekam_medis_id');
+    }
+
     public function treatment()
     {
         return $this->belongsTo(Treatment::class, 'treatment_id');
@@ -40,6 +46,16 @@ class Reservasi extends Model
         return $this->belongsTo(PaketTreatment::class, 'paket_treatment_id');
     }
 
+    public function treatments()
+    {
+        return $this->belongsToMany(Treatment::class, 'reservasi_treatments', 'reservasi_id', 'treatment_id')->withTimestamps();
+    }
+
+    public function paketTreatments()
+    {
+        return $this->belongsToMany(PaketTreatment::class, 'reservasi_paket_treatments', 'reservasi_id', 'paket_treatment_id')->withTimestamps();
+    }
+
     public function getPendaftarPasienAttribute()
     {
         return $this->karyawan ? $this->karyawan->NamaLengkap_karyawan : null;
@@ -47,11 +63,24 @@ class Reservasi extends Model
 
     public function getNamaTreatmentAttribute()
     {
-        if ($this->treatment_id && $this->treatment) {
-            return $this->treatment->Nama_treatment;
-        } elseif ($this->paket_treatment_id && $this->paketTreatment) {
-            return $this->paketTreatment->Nama_paket;
+        $names = [];
+
+        if ($this->treatments && $this->treatments->isNotEmpty()) {
+            foreach ($this->treatments as $t) {
+                $names[] = $t->Nama_treatment;
+            }
+        } elseif ($this->treatment_id && $this->treatment) {
+            $names[] = $this->treatment->Nama_treatment;
         }
-        return null;
+
+        if ($this->paketTreatments && $this->paketTreatments->isNotEmpty()) {
+            foreach ($this->paketTreatments as $pt) {
+                $names[] = $pt->Nama_paket;
+            }
+        } elseif ($this->paket_treatment_id && $this->paketTreatment) {
+            $names[] = $this->paketTreatment->Nama_paket;
+        }
+
+        return !empty($names) ? implode(', ', $names) : null;
     }
 }

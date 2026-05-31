@@ -51,6 +51,11 @@ class RekamMedis extends Model
         return $this->belongsTo(DataKaryawan::class, 'dokter_id');
     }
 
+    public function reservasi()
+    {
+        return $this->hasOne(Reservasi::class, 'rekam_medis_id');
+    }
+
     public function treatments()
     {
         return $this->belongsToMany(Treatment::class, 'rekam_medis_treatments', 'rekam_medis_id', 'treatment_id')
