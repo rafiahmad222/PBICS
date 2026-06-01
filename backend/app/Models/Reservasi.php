@@ -6,6 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class Reservasi extends Model
 {
+    const STATUS_PENDING = 'Pending';
+    const STATUS_HADIR = 'Hadir';
+    const STATUS_TIDAK_DATANG = 'Tidak Datang';
+    const STATUS_BATAL = 'Batal';
+
     protected $fillable = [
         'Tanggal_reservasi',
         'Jam_reservasi',
@@ -16,7 +21,8 @@ class Reservasi extends Model
         'karyawan_id',
         'treatment_id',
         'paket_treatment_id',
-        'Keterangan'
+        'Keterangan',
+        'status'
     ];
 
     protected $appends = ['Pendaftar_pasien', 'Nama_treatment'];

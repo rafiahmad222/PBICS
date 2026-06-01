@@ -46,4 +46,9 @@ class DataPasien extends Model
     {
         return $this->hasMany(RekamMedis::class, 'data_pasien_id');
     }
+
+    public function reservasis()
+    {
+        return $this->hasMany(Reservasi::class, 'pasien_id');
+    }
 }

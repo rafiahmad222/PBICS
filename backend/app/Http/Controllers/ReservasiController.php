@@ -32,6 +32,7 @@ class ReservasiController extends Controller
             'treatment_id' => 'nullable|exists:treatments,id',
             'paket_treatment_id' => 'nullable|exists:paket_treatments,id',
             'Keterangan' => 'nullable|string|max:255',
+            'status' => 'nullable|string|in:Pending,Hadir,Tidak Datang,Batal',
 
             // Multi treatments & packages
             'treatment_ids' => 'nullable|array',
@@ -155,6 +156,7 @@ class ReservasiController extends Controller
                 'treatment_id' => $validatedData['treatment_id'] ?? ($validatedData['treatment_ids'][0] ?? null),
                 'paket_treatment_id' => $validatedData['paket_treatment_id'] ?? ($validatedData['paket_treatment_ids'][0] ?? null),
                 'Keterangan' => $validatedData['Keterangan'],
+                'status' => $validatedData['status'] ?? 'Pending',
             ];
 
             $reservasi = Reservasi::create($reservasiData);
@@ -218,6 +220,7 @@ class ReservasiController extends Controller
             'treatment_id' => 'nullable|exists:treatments,id',
             'paket_treatment_id' => 'nullable|exists:paket_treatments,id',
             'Keterangan' => 'nullable|string|max:255',
+            'status' => 'sometimes|required|string|in:Pending,Hadir,Tidak Datang,Batal',
 
             // Multi-treatments & packages
             'treatment_ids' => 'nullable|array',
@@ -260,43 +263,57 @@ class ReservasiController extends Controller
 
             // Sync linked Rekam Medis
             $rekamMedis = $reservasi->rekamMedis;
-            if ($newPasienId) {
-                if (!$rekamMedis) {
-                    // Create new Rekam Medis if it didn't exist before
-                    $rekamMedis = \App\Models\RekamMedis::create([
-                        'data_pasien_id' => $newPasienId,
-                        'tanggal_kunjungan' => $validatedData['Tanggal_reservasi'] ?? $reservasi->Tanggal_reservasi,
-                        'tekanan_darah' => null,
-                        'keluhan_pasien' => $validatedData['Keterangan'] ?? $reservasi->Keterangan,
-                    ]);
-                    $reservasi->update(['rekam_medis_id' => $rekamMedis->id]);
-                } else {
-                    // Update existing rekam medis
-                    $rekamMedisData = [];
-                    if (array_key_exists('pasien_id', $validatedData)) {
-                        $rekamMedisData['data_pasien_id'] = $newPasienId;
-                    }
-                    if (array_key_exists('Tanggal_reservasi', $validatedData)) {
-                        $rekamMedisData['tanggal_kunjungan'] = $validatedData['Tanggal_reservasi'];
-                    }
-                    if (array_key_exists('Keterangan', $validatedData)) {
-                        $rekamMedisData['keluhan_pasien'] = $validatedData['Keterangan'];
-                    }
-                    
-                    if (!empty($rekamMedisData)) {
-                        $rekamMedis->update($rekamMedisData);
-                    }
-                }
+            $currentStatus = $validatedData['status'] ?? $reservasi->status;
 
-                // Sync treatments to rekam medis
-                if ($request->has('treatment_ids')) {
-                    $rekamMedis->treatments()->sync($validatedData['treatment_ids'] ?? []);
-                }
-            } else {
-                // If patient_id is null (e.g. changed back to non-registered), delete linked Rekam Medis
+            if (in_array($currentStatus, ['Tidak Datang', 'Batal'])) {
+                // If status is changed to Tidak Datang / Batal, delete the linked Rekam Medis
                 if ($rekamMedis) {
                     $reservasi->update(['rekam_medis_id' => null]);
+                    $rekamMedis->treatments()->detach();
+                    $rekamMedis->reseps()->detach();
                     $rekamMedis->delete();
+                }
+            } else {
+                if ($newPasienId) {
+                    if (!$rekamMedis) {
+                        // Create new Rekam Medis if it didn't exist before
+                        $rekamMedis = \App\Models\RekamMedis::create([
+                            'data_pasien_id' => $newPasienId,
+                            'tanggal_kunjungan' => $validatedData['Tanggal_reservasi'] ?? $reservasi->Tanggal_reservasi,
+                            'tekanan_darah' => null,
+                            'keluhan_pasien' => $validatedData['Keterangan'] ?? $reservasi->Keterangan,
+                        ]);
+                        $reservasi->update(['rekam_medis_id' => $rekamMedis->id]);
+                    } else {
+                        // Update existing rekam medis
+                        $rekamMedisData = [];
+                        if (array_key_exists('pasien_id', $validatedData)) {
+                            $rekamMedisData['data_pasien_id'] = $newPasienId;
+                        }
+                        if (array_key_exists('Tanggal_reservasi', $validatedData)) {
+                            $rekamMedisData['tanggal_kunjungan'] = $validatedData['Tanggal_reservasi'];
+                        }
+                        if (array_key_exists('Keterangan', $validatedData)) {
+                            $rekamMedisData['keluhan_pasien'] = $validatedData['Keterangan'];
+                        }
+                        
+                        if (!empty($rekamMedisData)) {
+                            $rekamMedis->update($rekamMedisData);
+                        }
+                    }
+
+                    // Sync treatments to rekam medis
+                    if ($request->has('treatment_ids')) {
+                        $rekamMedis->treatments()->sync($validatedData['treatment_ids'] ?? []);
+                    }
+                } else {
+                    // If patient_id is null (e.g. changed back to non-registered), delete linked Rekam Medis
+                    if ($rekamMedis) {
+                        $reservasi->update(['rekam_medis_id' => null]);
+                        $rekamMedis->treatments()->detach();
+                        $rekamMedis->reseps()->detach();
+                        $rekamMedis->delete();
+                    }
                 }
             }
 
@@ -330,10 +347,34 @@ class ReservasiController extends Controller
         \Illuminate\Support\Facades\DB::beginTransaction();
         try {
             $rekamMedis = $reservasi->rekamMedis;
+            $pasien = $reservasi->pasien;
+
+            // 1. Detach pivots for Reservasi
+            $reservasi->treatments()->detach();
+            $reservasi->paketTreatments()->detach();
+
+            // 2. Delete the Reservasi
             $reservasi->delete();
+
+            // 3. Delete linked Rekam Medis if exists
             if ($rekamMedis) {
+                $rekamMedis->treatments()->detach();
+                $rekamMedis->reseps()->detach();
                 $rekamMedis->delete();
             }
+
+            // 4. Delete patient if they are new and have no other activity
+            if ($pasien) {
+                // Check remaining reservations, remaining Rekam Medis, and transactions
+                $otherReservationsCount = $pasien->reservasis()->count();
+                $otherRekamMedisCount = $pasien->rekamMedis()->count();
+                $hasTransactions = \App\Models\Transaksi::where('data_pasien_id', $pasien->id)->exists();
+
+                if ($otherReservationsCount === 0 && $otherRekamMedisCount === 0 && !$hasTransactions) {
+                    $pasien->delete();
+                }
+            }
+
             \Illuminate\Support\Facades\DB::commit();
             
             return response()->json([
