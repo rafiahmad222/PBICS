@@ -19,6 +19,11 @@ use App\Http\Controllers\TransaksiController;
 use App\Http\Controllers\StokRacikanController;
 use App\Http\Controllers\AntreanRacikanController;
 use App\Http\Controllers\LaporanPenjualanController;
+use App\Http\Controllers\AbsensiController;
+use App\Http\Controllers\PengajuanCutiController;
+use App\Http\Controllers\SettingController;
+use App\Http\Controllers\PengaturanAbsensiController;
+use App\Http\Controllers\HariLiburController;
 
 /** PR
  * ini bisa ditambahkan middleware lagi di setiap API yang ada
@@ -103,4 +108,20 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Activity Logs
     Route::get('/activity-logs', [\App\Http\Controllers\ActivityLogController::class, 'index']);
+
+    // Absensi & Cuti Karyawan
+    Route::get('/absensi', [AbsensiController::class, 'index']);
+    Route::post('/absensi', [AbsensiController::class, 'store']);
+    Route::post('/pengajuan-cuti', [PengajuanCutiController::class, 'store']);
+    Route::get('/pengajuan-cuti', [PengajuanCutiController::class, 'index']);
+    Route::get('/pengajuan-cuti/{id}', [PengajuanCutiController::class, 'show']);
+    Route::post('/pengajuan-cuti/{id}/review', [PengajuanCutiController::class, 'review']);
+    Route::get('/pengajuan-lembur', [AbsensiController::class, 'getPengajuanLembur']);
+    Route::get('/pengajuan-lembur/{id}', [AbsensiController::class, 'showPengajuanLembur']);
+    Route::post('/pengajuan-lembur/{id}/review', [AbsensiController::class, 'reviewPengajuanLembur']);
+    Route::post('/settings/mode-ramadhan', [SettingController::class, 'updateModeRamadhan']);
+    Route::post('/absensi-config', [PengaturanAbsensiController::class, 'storeOrUpdate']);
+    Route::get('/hari-libur', [HariLiburController::class, 'index']);
+    Route::post('/hari-libur', [HariLiburController::class, 'store']);
+    Route::delete('/hari-libur/{id}', [HariLiburController::class, 'destroy']);
 });
