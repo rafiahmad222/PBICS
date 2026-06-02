@@ -17,7 +17,7 @@ Semua request ke API dilindungi oleh middleware **Sanctum**, sehingga wajib meny
   ```json
   {
     "gambar": "string_base64_foto_kamera_atau_file_path",
-    "lokasi": "-8.184486,113.668075", // Format string "latitude,longitude"
+    "lokasi": "-8.165356210585704,113.71176020924715", // Format string "latitude,longitude"
     "alasan_keterangan": "Ban bocor mogok di jalan raya" // Wajib jika terlambat >= 15 menit
   }
   ```

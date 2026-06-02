@@ -122,12 +122,12 @@ class AbsensiController extends Controller
             // Dapatkan koordinat kantor cabang
             // Jember: -8.184486, 113.668075
             // Lumajang: -8.133083, 113.224090
-            $officeLat = -8.184486;
-            $officeLon = 113.668075;
+            $officeLat = -8.165454875316666;
+            $officeLon = 113.71174444623048;
 
             if (strcasecmp($karyawan->Cabang, 'Lumajang') === 0) {
-                $officeLat = -8.133083;
-                $officeLon = 113.224090;
+                $officeLat = -8.155995703589348;
+                $officeLon = 113.25270886383797;
             }
 
             $distance = Absensi::calculateDistance($userLat, $userLon, $officeLat, $officeLon);
