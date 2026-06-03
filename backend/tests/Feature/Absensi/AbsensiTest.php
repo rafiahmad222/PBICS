@@ -12,6 +12,8 @@ use App\Models\PengajuanCuti;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\UploadedFile;
 
 class AbsensiTest extends TestCase
 {
@@ -23,6 +25,7 @@ class AbsensiTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        Storage::fake('public');
 
         // Buat Karyawan Pelayanan (Dokter)
         $this->karyawanPelayanan = DataKaryawan::create([
@@ -73,7 +76,7 @@ class AbsensiTest extends TestCase
         Carbon::setTestNow(Carbon::today()->setTime(8, 30, 0));
 
         $response = $this->postJson('/api/absensi', [
-            'gambar' => 'base64_string_of_image',
+            'gambar' => UploadedFile::fake()->create('absen.jpg', 100, 'image/jpeg'),
             'lokasi' => '-8.165454875316666,113.71174444623048', // Koordinat Cabang Jember (Jarak 0m)
         ]);
 
@@ -87,6 +90,9 @@ class AbsensiTest extends TestCase
             'tanggal' => Carbon::today()->toDateString(),
             'status_absen' => 'Tepat Waktu'
         ]);
+
+        $absensi = Absensi::first();
+        Storage::disk('public')->assertExists($absensi->gambar_masuk);
 
         Carbon::setTestNow(); // Reset mock waktu
     }
@@ -103,7 +109,7 @@ class AbsensiTest extends TestCase
 
         // 1. Coba check-in tanpa alasan
         $response = $this->postJson('/api/absensi', [
-            'gambar' => 'base64_string_of_image',
+            'gambar' => UploadedFile::fake()->create('absen.jpg', 100, 'image/jpeg'),
             'lokasi' => '-8.165454875316666,113.71174444623048',
         ]);
 
@@ -114,7 +120,7 @@ class AbsensiTest extends TestCase
 
         // 2. Coba check-in dengan alasan < 10 karakter
         $response = $this->postJson('/api/absensi', [
-            'gambar' => 'base64_string_of_image',
+            'gambar' => UploadedFile::fake()->create('absen.jpg', 100, 'image/jpeg'),
             'lokasi' => '-8.165454875316666,113.71174444623048',
             'alasan_keterangan' => 'Macet',
         ]);
@@ -126,7 +132,7 @@ class AbsensiTest extends TestCase
 
         // 3. Coba check-in dengan alasan valid (>= 10 karakter)
         $response = $this->postJson('/api/absensi', [
-            'gambar' => 'base64_string_of_image',
+            'gambar' => UploadedFile::fake()->create('absen.jpg', 100, 'image/jpeg'),
             'lokasi' => '-8.165454875316666,113.71174444623048',
             'alasan_keterangan' => 'Ban bocor di daerah Sumbersari Jember',
         ]);
@@ -143,6 +149,9 @@ class AbsensiTest extends TestCase
             'alasan_keterangan' => 'Ban bocor di daerah Sumbersari Jember'
         ]);
 
+        $absensi = Absensi::first();
+        Storage::disk('public')->assertExists($absensi->gambar_masuk);
+
         Carbon::setTestNow();
     }
 
@@ -156,7 +165,7 @@ class AbsensiTest extends TestCase
 
         // Absen dari lokasi yang jauh (Jember ke Alun-alun Rambipuji, sekitar 8-10 km)
         $response = $this->postJson('/api/absensi', [
-            'gambar' => 'base64_string_of_image',
+            'gambar' => UploadedFile::fake()->create('absen.jpg', 100, 'image/jpeg'),
             'lokasi' => '-8.204561,113.608975',
         ]);
 
@@ -188,7 +197,7 @@ class AbsensiTest extends TestCase
 
         // Absen di lokasi yang jauh
         $response = $this->postJson('/api/absensi', [
-            'gambar' => 'base64_string_of_image',
+            'gambar' => UploadedFile::fake()->create('absen.jpg', 100, 'image/jpeg'),
             'lokasi' => '-8.204561,113.608975',
         ]);
 
@@ -226,7 +235,7 @@ class AbsensiTest extends TestCase
         Carbon::setTestNow(Carbon::today()->setTime(17, 5, 0));
 
         $response = $this->postJson('/api/absensi', [
-            'gambar' => 'img_out',
+            'gambar' => UploadedFile::fake()->create('absen_out.jpg', 100, 'image/jpeg'),
             'lokasi' => '-8.165454875316666,113.71174444623048',
         ]);
 
@@ -235,11 +244,10 @@ class AbsensiTest extends TestCase
                      'message' => 'Check-out berhasil! Sampai jumpa'
                  ]);
 
-        $this->assertDatabaseHas('absensi', [
-            'id' => $absensi->id,
-            'jam_keluar' => '17:05:00',
-            'gambar_keluar' => 'img_out'
-        ]);
+        $updatedAbsensi = Absensi::find($absensi->id);
+        $this->assertEquals('17:05:00', $updatedAbsensi->jam_keluar);
+        $this->assertNotNull($updatedAbsensi->gambar_keluar);
+        Storage::disk('public')->assertExists($updatedAbsensi->gambar_keluar);
 
         Carbon::setTestNow();
     }

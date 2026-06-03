@@ -64,7 +64,7 @@ class AbsensiController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'gambar' => 'required|string',
+            'gambar' => 'required|image|mimes:jpeg,png,jpg,webp|max:10240',
             'lokasi' => 'required|string', // Format: "latitude,longitude"
         ]);
 
@@ -208,7 +208,7 @@ class AbsensiController extends Controller
                 'jam_masuk' => $currentTimeStr,
                 'jadwal_masuk' => $jadwalMasuk,
                 'jadwal_keluar' => $jadwalKeluar,
-                'gambar_masuk' => $request->gambar,
+                'gambar_masuk' => $request->file('gambar')->store('absensi', 'public'),
                 'lokasi_masuk' => $request->lokasi,
                 'status_absen' => $statusAbsen,
                 'status_pengajuan' => $statusPengajuan,
@@ -229,7 +229,7 @@ class AbsensiController extends Controller
             }
 
             $activeAbsensi->jam_keluar = $now->toTimeString();
-            $activeAbsensi->gambar_keluar = $request->gambar;
+            $activeAbsensi->gambar_keluar = $request->file('gambar')->store('absensi', 'public');
             $activeAbsensi->lokasi_keluar = $request->lokasi;
             $activeAbsensi->save();
 
