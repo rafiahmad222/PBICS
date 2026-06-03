@@ -74,7 +74,7 @@ class AbsensiTest extends TestCase
 
         $response = $this->postJson('/api/absensi', [
             'gambar' => 'base64_string_of_image',
-            'lokasi' => '-8.184486,113.668075', // Koordinat Cabang Jember (Jarak 0m)
+            'lokasi' => '-8.165454875316666,113.71174444623048', // Koordinat Cabang Jember (Jarak 0m)
         ]);
 
         $response->assertStatus(201)
@@ -104,7 +104,7 @@ class AbsensiTest extends TestCase
         // 1. Coba check-in tanpa alasan
         $response = $this->postJson('/api/absensi', [
             'gambar' => 'base64_string_of_image',
-            'lokasi' => '-8.184486,113.668075',
+            'lokasi' => '-8.165454875316666,113.71174444623048',
         ]);
 
         $response->assertStatus(422)
@@ -115,7 +115,7 @@ class AbsensiTest extends TestCase
         // 2. Coba check-in dengan alasan < 10 karakter
         $response = $this->postJson('/api/absensi', [
             'gambar' => 'base64_string_of_image',
-            'lokasi' => '-8.184486,113.668075',
+            'lokasi' => '-8.165454875316666,113.71174444623048',
             'alasan_keterangan' => 'Macet',
         ]);
 
@@ -127,7 +127,7 @@ class AbsensiTest extends TestCase
         // 3. Coba check-in dengan alasan valid (>= 10 karakter)
         $response = $this->postJson('/api/absensi', [
             'gambar' => 'base64_string_of_image',
-            'lokasi' => '-8.184486,113.668075',
+            'lokasi' => '-8.165454875316666,113.71174444623048',
             'alasan_keterangan' => 'Ban bocor di daerah Sumbersari Jember',
         ]);
 
@@ -218,7 +218,7 @@ class AbsensiTest extends TestCase
             'jadwal_masuk' => '08:45:00',
             'jadwal_keluar' => '17:00:00',
             'gambar_masuk' => 'img_in',
-            'lokasi_masuk' => '-8.184486,113.668075',
+            'lokasi_masuk' => '-8.165454875316666,113.71174444623048',
             'status_absen' => 'Tepat Waktu',
         ]);
 
@@ -227,7 +227,7 @@ class AbsensiTest extends TestCase
 
         $response = $this->postJson('/api/absensi', [
             'gambar' => 'img_out',
-            'lokasi' => '-8.184486,113.668075',
+            'lokasi' => '-8.165454875316666,113.71174444623048',
         ]);
 
         $response->assertStatus(200)
@@ -355,7 +355,7 @@ class AbsensiTest extends TestCase
             'jadwal_masuk' => '08:45:00',
             'jadwal_keluar' => '17:00:00',
             'gambar_masuk' => 'img',
-            'lokasi_masuk' => '-8.184486,113.668075',
+            'lokasi_masuk' => '-8.165454875316666,113.71174444623048',
             'status_absen' => 'Terlambat',
             'status_pengajuan' => 'PENDING',
             'alasan_keterangan' => 'Ban bocor mobil mogok dijalan',
@@ -393,7 +393,7 @@ class AbsensiTest extends TestCase
             'jadwal_masuk' => '08:45:00',
             'jadwal_keluar' => '17:00:00',
             'gambar_masuk' => 'img',
-            'lokasi_masuk' => '-8.184486,113.668075',
+            'lokasi_masuk' => '-8.165454875316666,113.71174444623048',
             'status_absen' => 'Terlambat',
             'status_pengajuan' => 'PENDING',
             'alasan_keterangan' => 'Kesiangan tidur larut malam',
@@ -498,5 +498,40 @@ class AbsensiTest extends TestCase
             'lokasi_checkin' => 'Luar Kantor',
             'lokasi_checkout' => 'Kantor',
         ]);
+    }
+
+    /**
+     * Test endpoint GET /api/absensi mengembalikan metadata hari libur jika hari ini libur.
+     */
+    public function test_index_returns_holiday_metadata(): void
+    {
+        Sanctum::actingAs($this->karyawanPelayanan, ['*']);
+        Carbon::setTestNow(Carbon::today()->setTime(8, 30, 0));
+        $todayStr = Carbon::today()->toDateString();
+
+        // 1. Cek ketika tidak ada hari libur
+        $response = $this->getJson('/api/absensi');
+        $response->assertStatus(200)
+                 ->assertJsonFragment([
+                     'hari_libur' => null
+                 ]);
+
+        // 2. Buat hari libur hari ini
+        HariLibur::create([
+            'nama_hari_libur' => 'Hari Raya Nyepi',
+            'jenis_hari_libur' => 'Nasional',
+            'tanggal_mulai' => $todayStr,
+            'tanggal_selesai' => $todayStr,
+            'keterangan' => 'Libur Nyepi'
+        ]);
+
+        // 3. Cek kembali, harus mengembalikan nama hari libur
+        $response = $this->getJson('/api/absensi');
+        $response->assertStatus(200)
+                 ->assertJsonFragment([
+                     'hari_libur' => 'Hari Raya Nyepi'
+                 ]);
+
+        Carbon::setTestNow();
     }
 }

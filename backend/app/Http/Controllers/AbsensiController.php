@@ -46,8 +46,14 @@ class AbsensiController extends Controller
                 ];
             });
 
+        $today = Carbon::today()->toDateString();
+        $hariLibur = HariLibur::where('tanggal_mulai', '<=', $today)
+            ->where('tanggal_selesai', '>=', $today)
+            ->first();
+
         return response()->json([
             'message' => 'Rekap absensi berhasil diambil.',
+            'hari_libur' => $hariLibur ? $hariLibur->nama_hari_libur : null,
             'data' => $absensi
         ], 200);
     }
