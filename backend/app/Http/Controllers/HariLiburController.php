@@ -63,7 +63,7 @@ class HariLiburController extends Controller
     /**
      * Hapus hari libur.
      */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         // Pastikan hanya HRD/Owner/Super Admin
         if (!in_array($request->user()->Divisi, ['HRD', 'Owner', 'Super Admin'])) {
