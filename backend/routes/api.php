@@ -107,6 +107,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/laporan-penjualan', [LaporanPenjualanController::class, 'index']);
     Route::get('/laporan-penjualan/{id}', [LaporanPenjualanController::class, 'show']);
 
+    // Dashboard Owner
+    Route::get('/dashboard-owner/top-selling', [\App\Http\Controllers\DashboardOwnerController::class, 'getTopSellingItems']);
+
     // Activity Logs
     Route::get('/activity-logs', [\App\Http\Controllers\ActivityLogController::class, 'index']);
 
