@@ -124,4 +124,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/hari-libur', [HariLiburController::class, 'index']);
     Route::post('/hari-libur', [HariLiburController::class, 'store']);
     Route::delete('/hari-libur/{id}', [HariLiburController::class, 'destroy']);
+
+    // Distributor
+    Route::apiResource('distributor', \App\Http\Controllers\DistributorController::class);
 });

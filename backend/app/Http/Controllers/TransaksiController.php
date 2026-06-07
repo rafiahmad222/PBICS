@@ -43,6 +43,7 @@ class TransaksiController extends Controller
             $validated = $request->validate([
                 'data_pasien_id' => 'nullable|exists:data_pasiens,id',
                 'nama_pasien_distributor' => 'required|string|max:255',
+                'is_distributor' => 'nullable|boolean',
                 'alamat_pengiriman' => 'nullable|string|max:255',
                 'tanggal_transaksi' => 'required|date',
                 'catatan_pesanan' => 'nullable|string|max:100',
@@ -261,7 +262,10 @@ class TransaksiController extends Controller
                         throw ValidationException::withMessages(['details' => 'Item tidak ditemukan']);
                     }
 
-                    $harga = $modelItem->Harga;
+                    $isDistributor = $request->boolean('is_distributor');
+                    $harga = ($isDistributor && isset($modelItem->Harga_Distributor) && $modelItem->Harga_Distributor > 0) 
+                             ? $modelItem->Harga_Distributor 
+                             : $modelItem->Harga;
                     $namaItem = $modelItem->Nama_produk;
                     
                     $totalHarga = $harga * $item['qty'];
