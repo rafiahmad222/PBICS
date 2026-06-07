@@ -256,6 +256,20 @@ class DataPasienController extends Controller
         ]);
     }
 
+    public function getDistribusiWilayah()
+    {
+        $distribusi = DataPasien::join('Kec', 'data_pasiens.Kec_id', '=', 'Kec.id')
+            ->select('Kec.name as kecamatan')
+            ->selectRaw('count(data_pasiens.id) as total_pasien')
+            ->groupBy('Kec.id', 'Kec.name')
+            ->get();
+
+        return response()->json([
+            'message' => 'Data distribusi pasien berhasil diambil',
+            'data' => $distribusi
+        ]);
+    }
+
     public function getKecamatan($kabKotaId)
     {
         $kecamatan = Kec::where('kab_kota_id', $kabKotaId)

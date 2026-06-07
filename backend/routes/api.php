@@ -42,6 +42,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // Data Pasien
+    Route::get('/pasien-distribusi', [DataPasienController::class, 'getDistribusiWilayah']);
     Route::get('/pasien/next-numbers', [DataPasienController::class, 'getNextNumbers']);
     Route::apiResource('pasien', DataPasienController::class);
     
