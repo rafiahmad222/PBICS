@@ -4,10 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use App\Traits\ShiftsDateAfterFivePM;
 
 class Transaksi extends Model
 {
-    use HasUuids;
+    use HasUuids, ShiftsDateAfterFivePM;
+
+    protected $shiftDateColumns = ['tanggal_transaksi'];
 
     protected $table = 'transaksis';
     protected $keyType = 'string';

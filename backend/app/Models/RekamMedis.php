@@ -4,10 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\ShiftsDateAfterFivePM;
 
 class RekamMedis extends Model
 {
-    use HasFactory;
+    use HasFactory, ShiftsDateAfterFivePM;
+
+    protected $shiftDateColumns = ['tanggal_kunjungan'];
 
     protected $table = 'rekam_medis';
 

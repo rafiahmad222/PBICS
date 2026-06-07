@@ -7,12 +7,11 @@ use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        DB::statement('ALTER TABLE distributors MODIFY alamat VARCHAR(255)');
+        Schema::table('distributors', function (Blueprint $table) {
+            $table->string('alamat', 255)->change();
+        });
     }
 
     /**
@@ -20,6 +19,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement('ALTER TABLE distributors MODIFY alamat VARCHAR(50)');
+        Schema::table('distributors', function (Blueprint $table) {
+            $table->string('alamat', 50)->change();
+        });
     }
 };

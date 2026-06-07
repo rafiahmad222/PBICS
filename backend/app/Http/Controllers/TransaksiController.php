@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Illuminate\Validation\ValidationException;
+use App\Traits\ShiftsDateAfterFivePM;
 
 class TransaksiController extends Controller
 {
@@ -72,11 +73,13 @@ class TransaksiController extends Controller
                     $itemsTreatment[] = $item;
                 } elseif ($item['item_type'] === 'StokRacikan') {
                     $itemsRacikan[] = $item;
+             
                 }
             }
 
             $createdTransaksis = [];
-            $todayYmd = Carbon::now()->format('ymd');
+            $businessNow = ShiftsDateAfterFivePM::getBusinessDate();
+            $todayYmd = $businessNow->format('ymd');
             $orderId = 'ORD-' . $todayYmd . '-' . str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
 
             // Process Treatment
@@ -134,8 +137,8 @@ class TransaksiController extends Controller
                         'qty' => $item['qty'],
                         'harga' => $harga,
                         'total_harga' => $totalHarga,
-                        'created_at' => now(),
-                        'updated_at' => now(),
+                        'created_at' => $businessNow,
+                        'updated_at' => $businessNow,
                     ];
 
                     // Kurangi stok bahan
@@ -212,8 +215,8 @@ class TransaksiController extends Controller
                         'qty' => $item['qty'],
                         'harga' => $harga,
                         'total_harga' => $totalHarga,
-                        'created_at' => now(),
-                        'updated_at' => now(),
+                        'created_at' => $businessNow,
+                        'updated_at' => $businessNow,
                     ];
                 }
 
@@ -280,8 +283,8 @@ class TransaksiController extends Controller
                         'qty' => $item['qty'],
                         'harga' => $harga,
                         'total_harga' => $totalHarga,
-                        'created_at' => now(),
-                        'updated_at' => now(),
+                        'created_at' => $businessNow,
+                        'updated_at' => $businessNow,
                     ];
                 }
 
@@ -489,7 +492,7 @@ class TransaksiController extends Controller
             }
 
             // Auto generate No Faktur PB-YYMMDD1xxx (hanya untuk Stok Produk)
-            $todayYmd = Carbon::now()->format('ymd');
+            $todayYmd = ShiftsDateAfterFivePM::getBusinessDate()->format('ymd');
             $prefixFakturProduk = 'PB-' . $todayYmd . '1';
             $lastFaktur = Transaksi::where('no_faktur', 'like', $prefixFakturProduk . '%')
                                    ->orderBy('no_faktur', 'desc')
