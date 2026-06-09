@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Transaksi;
 use App\Models\TransaksiDetail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class DashboardOwnerController extends Controller
 {
@@ -99,6 +101,95 @@ class DashboardOwnerController extends Controller
                 'produk' => $topProducts,
                 'treatment' => $topTreatments,
                 'racikan' => $topRacikan
+            ]
+        ]);
+    }
+
+    /**
+     * Get summary statistics for the dashboard cards.
+     */
+    public function getSummaryStats(Request $request)
+    {
+        $now = Carbon::now();
+        
+        $currentMonthStart = $now->copy()->startOfMonth();
+        $currentMonthEnd = $now->copy()->endOfMonth();
+        
+        $lastMonthStart = $now->copy()->subMonth()->startOfMonth();
+        $lastMonthEnd = $now->copy()->subMonth()->endOfMonth();
+
+        $getStats = function($start, $end) {
+            $transaksis = Transaksi::where('status', 'Selesai')
+                ->whereBetween('tanggal_transaksi', [$start, $end])
+                ->get();
+
+            $revenue = $transaksis->sum('total_keseluruhan');
+            $transactionsCount = $transaksis->count();
+
+            return [
+                'revenue' => $revenue,
+                'transactions' => $transactionsCount
+            ];
+        };
+
+        $currentStats = $getStats($currentMonthStart, $currentMonthEnd);
+        $lastStats = $getStats($lastMonthStart, $lastMonthEnd);
+
+        $calculateGrowth = function($current, $last) {
+            if ($last > 0) {
+                return (($current - $last) / $last) * 100;
+            } elseif ($current > 0) {
+                return 100;
+            }
+            return 0;
+        };
+
+        $revenueGrowth = $calculateGrowth($currentStats['revenue'], $lastStats['revenue']);
+        $transactionsGrowth = $calculateGrowth($currentStats['transactions'], $lastStats['transactions']);
+
+        // Sales sources (Klinik vs Reseller) specifically for 'Produk'
+        $resellerSales = Transaksi::where('status', 'Selesai')
+            ->where('tipe_transaksi', 'Produk')
+            ->where('nama_pasien_distributor', 'LIKE', '%- DISTRIBUTOR%')
+            ->whereBetween('tanggal_transaksi', [$currentMonthStart, $currentMonthEnd])
+            ->sum('total_keseluruhan');
+
+        $klinikSales = Transaksi::where('status', 'Selesai')
+            ->where('tipe_transaksi', 'Produk')
+            ->where(function($query) {
+                $query->whereNull('nama_pasien_distributor')
+                      ->orWhere('nama_pasien_distributor', 'NOT LIKE', '%- DISTRIBUTOR%');
+            })
+            ->whereBetween('tanggal_transaksi', [$currentMonthStart, $currentMonthEnd])
+            ->sum('total_keseluruhan');
+
+        $salesSources = [
+            [
+                'name' => 'Klinik (Kantor)',
+                'value' => (float) $klinikSales,
+                'color' => '#1B4D3E'
+            ],
+            [
+                'name' => 'Reseller',
+                'value' => (float) $resellerSales,
+                'color' => '#829356'
+            ]
+        ];
+
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'revenue' => [
+                    'value' => $currentStats['revenue'],
+                    'growth' => round($revenueGrowth, 1),
+                    'trend' => $revenueGrowth >= 0 ? 'up' : 'down'
+                ],
+                'transactions' => [
+                    'value' => $currentStats['transactions'],
+                    'growth' => round($transactionsGrowth, 1),
+                    'trend' => $transactionsGrowth >= 0 ? 'up' : 'down'
+                ],
+                'sales_sources' => $salesSources
             ]
         ]);
     }

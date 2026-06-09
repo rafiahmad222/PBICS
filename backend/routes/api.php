@@ -109,6 +109,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Dashboard Owner
     Route::get('/dashboard-owner/top-selling', [\App\Http\Controllers\DashboardOwnerController::class, 'getTopSellingItems']);
+    Route::get('/dashboard-owner/summary-stats', [\App\Http\Controllers\DashboardOwnerController::class, 'getSummaryStats']);
 
     // Activity Logs
     Route::get('/activity-logs', [\App\Http\Controllers\ActivityLogController::class, 'index']);
