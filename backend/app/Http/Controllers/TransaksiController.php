@@ -506,10 +506,16 @@ class TransaksiController extends Controller
             $noFaktur = 'PB-' . $todayYmd . '1' . str_pad($newSeq, 3, '0', STR_PAD_LEFT);
 
             // Update Transaksi
-            $transaksi->update([
+            $updateData = [
                 'no_faktur' => $noFaktur,
                 'status' => 'Selesai'
-            ]);
+            ];
+            
+            if ($request->has('alamat_pengiriman')) {
+                $updateData['alamat_pengiriman'] = $request->alamat_pengiriman;
+            }
+
+            $transaksi->update($updateData);
 
             // Pengurangan Stok menggunakan qty terbaru (jika sudah diedit gudang)
             foreach ($transaksi->details as $detail) {
