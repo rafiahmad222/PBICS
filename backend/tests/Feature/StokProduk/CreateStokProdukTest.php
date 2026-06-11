@@ -70,4 +70,21 @@ class CreateStokProdukTest extends TestCase
 
         $response->assertStatus(422);
     }
+
+    public function test_create_stok_produk_fails_with_negative_stok(): void
+    {
+        Sanctum::actingAs($this->user, ['*']);
+
+        $response = $this->postJson('/api/stok-produk', [
+            'Nama_produk' => 'Skincare Negative',
+            'Kategori' => 'Krim Wajah',
+            'Harga' => 150000,
+            'Harga_Distributor' => 100000,
+            'Stok' => -5,
+            'Batas_minimal_stok' => 10
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['Stok']);
+    }
 }

@@ -17,4 +17,12 @@ class StokBahanInfus extends Model
         'Stok',
         'Batas_minimal_stok',
     ];
+
+    /**
+     * Mutator to ensure stock cannot be negative.
+     */
+    public function setStokAttribute($value)
+    {
+        $this->attributes['Stok'] = max(0, $value);
+    }
 }

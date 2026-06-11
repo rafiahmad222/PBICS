@@ -34,4 +34,12 @@ class StokProduk extends Model
                     ->withPivot('jumlah')
                     ->withTimestamps();
     }
+
+    /**
+     * Mutator to ensure stock cannot be negative.
+     */
+    public function setStokAttribute($value)
+    {
+        $this->attributes['Stok'] = max(0, $value);
+    }
 }

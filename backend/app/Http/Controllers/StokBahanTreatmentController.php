@@ -30,7 +30,7 @@ class StokBahanTreatmentController extends Controller
                 'Nama_produk' => 'required|string|max:100',
                 'Kategori' => 'required|string|max:100',
                 'Harga' => 'required|numeric',
-                'Stok' => 'required|integer',
+                'Stok' => 'required|integer|min:0',
                 'Batas_minimal_stok' => 'required|integer',
             ]);
 
@@ -96,7 +96,7 @@ class StokBahanTreatmentController extends Controller
                 'Nama_produk' => 'sometimes|required|string|max:100',
                 'Kategori' => 'sometimes|required|string|max:100',
                 'Harga' => 'sometimes|required|numeric',
-                'Stok' => 'sometimes|required|integer',
+                'Stok' => 'sometimes|required|integer|min:0',
                 'Batas_minimal_stok' => 'sometimes|required|integer',
             ]);
 

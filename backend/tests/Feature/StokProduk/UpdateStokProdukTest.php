@@ -63,4 +63,45 @@ class UpdateStokProdukTest extends TestCase
             'Stok' => 75
         ]);
     }
+
+    public function test_update_stok_produk_fails_with_negative_stok(): void
+    {
+        Sanctum::actingAs($this->user, ['*']);
+
+        $produk = StokProduk::create([
+            'Nama_produk' => 'Skincare Lama',
+            'Kode_Produk' => 'PRD-001',
+            'Kategori' => 'Krim Wajah',
+            'Harga' => 150000,
+            'Harga_Distributor' => 100000,
+            'Stok' => 50,
+            'Batas_minimal_stok' => 10
+        ]);
+
+        $response = $this->putJson('/api/stok-produk/' . $produk->id, [
+            'Stok' => -10
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['Stok']);
+    }
+
+    public function test_stok_produk_mutator_prevents_negative_stok_when_updated_manually(): void
+    {
+        $produk = StokProduk::create([
+            'Nama_produk' => 'Skincare Lama',
+            'Kode_Produk' => 'PRD-001',
+            'Kategori' => 'Krim Wajah',
+            'Harga' => 150000,
+            'Harga_Distributor' => 100000,
+            'Stok' => 5,
+            'Batas_minimal_stok' => 10
+        ]);
+
+        // Manually subtract to negative
+        $produk->Stok -= 10;
+        $produk->save();
+
+        $this->assertEquals(0, $produk->fresh()->Stok);
+    }
 }
