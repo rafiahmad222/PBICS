@@ -49,7 +49,7 @@ Route::middleware('auth:sanctum')->group(function () {
     //Data Karyawan 
     Route::apiResource('karyawan', DataKaryawanController::class);
     Route::post('/karyawan/{id}/reset-password', [DataKaryawanController::class, 'updatePassword'])
-        ->middleware('Divisi:HRD');
+        ->middleware('Divisi:HRD,Super Admin');
 
     // Data Wilayah
     Route::get('/wilayah/kabkota', [WilayahController::class, 'getKabKota']);
@@ -131,5 +131,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/hari-libur/{id}', [HariLiburController::class, 'destroy']);
 
     // Distributor
+    Route::put('/distributor/{id}/deposit', [\App\Http\Controllers\DistributorController::class, 'addDeposit']);
     Route::apiResource('distributor', \App\Http\Controllers\DistributorController::class);
 });

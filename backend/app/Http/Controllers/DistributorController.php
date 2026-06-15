@@ -146,4 +146,44 @@ class DistributorController extends Controller
             'data' => $distributor
         ], 200);
     }
+
+    public function addDeposit(Request $request, $id)
+    {
+        $distributor = Distributor::find($id);
+
+        if (!$distributor) {
+            return response()->json([
+                'message' => 'Data distributor tidak ditemukan.'
+            ], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'deposit_masuk' => 'required|numeric|min:0',
+        ], [
+            'required' => 'Nominal deposit wajib diisi',
+            'numeric' => 'Nominal deposit harus berupa angka',
+            'min' => 'Nominal deposit tidak boleh kurang dari 0',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => $validator->errors()->first(),
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $depositMasuk = $request->deposit_masuk;
+        $distributor->deposit_masuk = $depositMasuk;
+        $distributor->sisa_deposit = $distributor->sisa_deposit + $depositMasuk;
+        $distributor->save();
+
+        return response()->json([
+            'message' => 'Berhasil, Deposit berhasil ditambahkan',
+            'data' => [
+                'id' => $distributor->id,
+                'Nama_Distributor' => $distributor->nama_distributor,
+                'Sisa_Deposit' => $distributor->sisa_deposit,
+            ]
+        ], 200);
+    }
 }
