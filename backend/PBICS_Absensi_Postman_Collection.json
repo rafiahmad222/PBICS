@@ -1,0 +1,850 @@
+{
+	"info": {
+		"_postman_id": "b3e5ad42-1e9a-4c28-98e2-2aef2cd8373a",
+		"name": "PBICS - API Absensi, Cuti, Hari Libur, Settings & Distributor",
+		"description": "Postman Collection untuk testing API Absensi, Cuti, Hari Libur, Pengaturan Sistem, dan Distributor pada aplikasi PBICS (Laravel Backend).\n\nCara Penggunaan:\n1. Import file ini ke Postman.\n2. Jalankan request 'Login Karyawan' dengan username & password yang sesuai.\n3. Token 'access_token' akan otomatis disimpan ke Collection Variable 'token' sehingga Anda tidak perlu copy-paste manual untuk request lainnya.\n4. Jalankan request absensi/cuti/lembur/hari libur/pengaturan/distributor.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Auth",
+			"item": [
+				{
+					"name": "Login Karyawan",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.access_token) {",
+									"    pm.collectionVariables.set(\"token\", jsonData.access_token);",
+									"    console.log(\"Token berhasil disimpan secara otomatis!\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"Username\": \"karyawan_username\",\n    \"Password\": \"karyawan_password\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"login"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "2. Absensi Karyawan",
+			"item": [
+				{
+					"name": "Check-in / Check-out (Absensi)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "gambar",
+									"description": "Pilih file gambar/foto selfie untuk check-in/out",
+									"type": "file",
+									"src": []
+								},
+								{
+									"key": "lokasi",
+									"value": "-8.165454875316666,113.71174444623048",
+									"description": "Koordinat. Jember: -8.165454875316666,113.71174444623048 | Lumajang: -8.155995703589348,113.25270886383797",
+									"type": "text"
+								},
+								{
+									"key": "alasan_keterangan",
+									"value": "Terlambat karena ban motor bocor di jalan.",
+									"description": "Wajib diisi min 10 karakter jika terlambat lebih dari 15 menit",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/absensi",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"absensi"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Melihat Rekap Absensi",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/absensi?search=&tanggal=",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"absensi"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "",
+									"description": "Mencari berdasarkan nama karyawan (opsional)"
+								},
+								{
+									"key": "tanggal",
+									"value": "",
+									"description": "Mencari berdasarkan tanggal YYYY-MM-DD (opsional)"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "3. Pengajuan Cuti (Karyawan & HRD)",
+			"item": [
+				{
+					"name": "Buat Pengajuan Cuti Baru",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"jenis_cuti\": \"CUTI\",\n    \"tanggal_mulai\": \"2026-06-20\",\n    \"tanggal_selesai\": \"2026-06-22\",\n    \"alasan\": \"Acara pernikahan keluarga dekat\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/pengajuan-cuti",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"pengajuan-cuti"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Daftar Pengajuan Cuti (HRD / Admin / Owner)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/pengajuan-cuti?status=PENDING",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"pengajuan-cuti"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "PENDING"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Detail Pengajuan Cuti (HRD / Admin / Owner)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/pengajuan-cuti/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"pengajuan-cuti",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Review (Approve / Reject) Cuti (HRD / Admin / Owner)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status_pengajuan\": \"DISETUJUI\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/pengajuan-cuti/1/review",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"pengajuan-cuti",
+								"1",
+								"review"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "4. Pengajuan & Review Lembur (HRD / Admin / Owner)",
+			"item": [
+				{
+					"name": "Daftar Pengajuan Lembur / Terlambat",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/pengajuan-lembur?status=PENDING",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"pengajuan-lembur"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "PENDING",
+									"description": "Filter status: PENDING / DISETUJUI / DITOLAK (opsional)"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Detail Pengajuan Lembur / Terlambat",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/pengajuan-lembur/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"pengajuan-lembur",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Review (Approve / Reject) Pengajuan",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status_pengajuan\": \"DISETUJUI\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/pengajuan-lembur/1/review",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"pengajuan-lembur",
+								"1",
+								"review"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "5. Hari Libur (HRD / Admin / Owner)",
+			"item": [
+				{
+					"name": "Tampilkan Semua Hari Libur",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/hari-libur",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"hari-libur"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Tambah Hari Libur Baru",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nama_hari_libur\": \"Hari Raya Nyepi\",\n    \"jenis_hari_libur\": \"Nasional\",\n    \"tanggal_mulai\": \"2026-03-19\",\n    \"tanggal_selesai\": \"2026-03-19\",\n    \"keterangan\": \"Tahun Baru Saka 1948\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/hari-libur",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"hari-libur"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Hapus Hari Libur",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/hari-libur/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"hari-libur",
+								"1"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "6. Pengaturan Sistem (HRD / Admin / Owner)",
+			"item": [
+				{
+					"name": "Update Mode Ramadhan",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"is_active\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/settings/mode-ramadhan",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"settings",
+								"mode-ramadhan"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "7. Distributor (Deposit)",
+			"item": [
+				{
+					"name": "Tampilkan Semua Distributor",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/distributor",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"distributor"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Detail Distributor",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/distributor/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"distributor",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Tambah Distributor Baru",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nama_distributor\": \"PT. Sentosa Abadi\",\n    \"tanggal_lahir\": \"1988-08-18\",\n    \"alamat\": \"Jl. Gajah Mada No. 45, Jember\",\n    \"no_telp\": \"089876543210\",\n    \"email\": \"contact@sentosaabadi.com\",\n    \"distributor\": \"Utama\",\n    \"deposit_masuk\": 10000000\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/distributor",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"distributor"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Perbarui Distributor",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nama_distributor\": \"PT. Sentosa Abadi Perkasa\",\n    \"tanggal_lahir\": \"1988-08-18\",\n    \"alamat\": \"Jl. Gajah Mada No. 99\",\n    \"no_telp\": \"089876543210\",\n    \"email\": \"sales@sentosaabadi.com\",\n    \"distributor\": \"Utama\",\n    \"deposit_masuk\": 12000000\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/distributor/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"distributor",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Top-Up / Tambah Deposit",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"deposit_masuk\": 2500000\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/distributor/1/deposit",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"distributor",
+								"1",
+								"deposit"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://127.0.0.1:8000/api",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

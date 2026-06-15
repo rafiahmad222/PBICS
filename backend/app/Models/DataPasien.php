@@ -51,4 +51,9 @@ class DataPasien extends Model
     {
         return $this->hasMany(Reservasi::class, 'pasien_id');
     }
+
+    public function transaksis()
+    {
+        return $this->hasMany(Transaksi::class, 'data_pasien_id');
+    }
 }

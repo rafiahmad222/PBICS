@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\DataPasien;
+use App\Models\Transaksi;
 use Illuminate\Http\Request;
 use App\Models\Kec;
 use Carbon\Carbon;
@@ -139,9 +140,47 @@ class DataPasienController extends Controller
             ], 404);
         }
 
+        // Ambil riwayat transaksi sukses (Selesai) untuk pasien ini beserta detail itemnya
+        $transaksis = Transaksi::where('data_pasien_id', $id)
+            ->where('status', 'Selesai')
+            ->with('details')
+            ->get();
+
+        $produkHistory = [];
+        $treatmentHistory = [];
+        $racikanHistory = [];
+
+        foreach ($transaksis as $transaksi) {
+            foreach ($transaksi->details as $detail) {
+                $historyItem = [
+                    'transaksi_id' => $transaksi->id,
+                    'no_faktur' => $transaksi->no_faktur,
+                    'no_resi' => $transaksi->no_resi,
+                    'tanggal' => $transaksi->tanggal_transaksi,
+                    'nama_item' => $detail->nama_item,
+                    'qty' => $detail->qty,
+                    'harga' => $detail->harga,
+                    'total_harga' => $detail->total_harga,
+                ];
+
+                if ($detail->itemable_type === 'App\Models\StokProduk') {
+                    $produkHistory[] = $historyItem;
+                } elseif ($detail->itemable_type === 'App\Models\Treatment') {
+                    $treatmentHistory[] = $historyItem;
+                } elseif ($detail->itemable_type === 'App\Models\StokRacikan') {
+                    $racikanHistory[] = $historyItem;
+                }
+            }
+        }
+
         return response()->json([
             'message' => 'Detail pasien berhasil diambil',
-            'data' => $pasien
+            'data' => $pasien,
+            'riwayat_pembelian' => [
+                'produk' => $produkHistory,
+                'treatment' => $treatmentHistory,
+                'racikan' => $racikanHistory,
+            ]
         ]);
     }
     
