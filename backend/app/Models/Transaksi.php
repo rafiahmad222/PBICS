@@ -22,6 +22,7 @@ class Transaksi extends Model
         'no_faktur',
         'no_resi',
         'data_pasien_id',
+        'distributor_id',
         'nama_pasien_distributor',
         'alamat_pengiriman',
         'karyawan_id',
@@ -34,6 +35,11 @@ class Transaksi extends Model
     public function pasien()
     {
         return $this->belongsTo(DataPasien::class, 'data_pasien_id');
+    }
+
+    public function distributor()
+    {
+        return $this->belongsTo(Distributor::class, 'distributor_id');
     }
 
     public function karyawan()

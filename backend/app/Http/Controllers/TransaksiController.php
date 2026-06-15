@@ -43,6 +43,7 @@ class TransaksiController extends Controller
         try {
             $validated = $request->validate([
                 'data_pasien_id' => 'nullable|exists:data_pasiens,id',
+                'distributor_id' => 'nullable|exists:distributors,id',
                 'nama_pasien_distributor' => 'required|string|max:255',
                 'is_distributor' => 'nullable|boolean',
                 'alamat_pengiriman' => 'nullable|string|max:255',
@@ -56,6 +57,43 @@ class TransaksiController extends Controller
             ]);
 
             DB::beginTransaction();
+
+            $isDistributor = !empty($validated['distributor_id']) || $request->boolean('is_distributor');
+
+            if (!empty($validated['distributor_id'])) {
+                foreach ($validated['details'] as $detail) {
+                    if ($detail['item_type'] !== 'StokProduk') {
+                        throw ValidationException::withMessages([
+                            'details' => 'Distributor hanya diperbolehkan membeli produk (StokProduk).'
+                        ]);
+                    }
+                }
+
+                $distributor = \App\Models\Distributor::find($validated['distributor_id']);
+                if ($distributor) {
+                    $totalRequiredDeposit = 0;
+                    foreach ($validated['details'] as $item) {
+                        $itemClass = 'App\\Models\\' . $item['item_type'];
+                        $modelItem = $itemClass::find($item['item_id']);
+                        if (!$modelItem) {
+                            throw ValidationException::withMessages(['details' => 'Item tidak ditemukan']);
+                        }
+                        $harga = (isset($modelItem->Harga_Distributor) && $modelItem->Harga_Distributor > 0) 
+                                 ? $modelItem->Harga_Distributor 
+                                 : $modelItem->Harga;
+                        $totalRequiredDeposit += $harga * $item['qty'];
+                    }
+
+                    if ($distributor->sisa_deposit < $totalRequiredDeposit) {
+                        throw ValidationException::withMessages([
+                            'distributor_id' => 'Saldo deposit distributor tidak mencukupi. Sisa deposit saat ini: Rp ' . number_format($distributor->sisa_deposit, 0, ',', '.')
+                        ]);
+                    }
+
+                    $distributor->sisa_deposit -= $totalRequiredDeposit;
+                    $distributor->save();
+                }
+            }
 
             $karyawanId = Auth::id(); 
             if (!$karyawanId) {
@@ -102,6 +140,7 @@ class TransaksiController extends Controller
                     'no_resi' => null,
                     'no_faktur' => $noFakturTreatment,
                     'data_pasien_id' => $validated['data_pasien_id'] ?? null,
+                    'distributor_id' => $validated['distributor_id'] ?? null,
                     'nama_pasien_distributor' => $validated['nama_pasien_distributor'],
                     'alamat_pengiriman' => $validated['alamat_pengiriman'] ?? null,
                     'karyawan_id' => $karyawanId,
@@ -180,6 +219,7 @@ class TransaksiController extends Controller
                     'no_resi' => null,
                     'no_faktur' => $noFakturRacikan,
                     'data_pasien_id' => $validated['data_pasien_id'] ?? null,
+                    'distributor_id' => $validated['distributor_id'] ?? null,
                     'nama_pasien_distributor' => $validated['nama_pasien_distributor'],
                     'alamat_pengiriman' => $validated['alamat_pengiriman'] ?? null,
                     'karyawan_id' => $karyawanId,
@@ -245,6 +285,7 @@ class TransaksiController extends Controller
                     'no_resi' => $noResiPO,
                     'no_faktur' => null,
                     'data_pasien_id' => $validated['data_pasien_id'] ?? null,
+                    'distributor_id' => $validated['distributor_id'] ?? null,
                     'nama_pasien_distributor' => $validated['nama_pasien_distributor'],
                     'alamat_pengiriman' => $validated['alamat_pengiriman'] ?? null,
                     'karyawan_id' => $karyawanId,
@@ -265,7 +306,6 @@ class TransaksiController extends Controller
                         throw ValidationException::withMessages(['details' => 'Item tidak ditemukan']);
                     }
 
-                    $isDistributor = $request->boolean('is_distributor');
                     $harga = ($isDistributor && isset($modelItem->Harga_Distributor) && $modelItem->Harga_Distributor > 0) 
                              ? $modelItem->Harga_Distributor 
                              : $modelItem->Harga;
@@ -353,7 +393,7 @@ class TransaksiController extends Controller
         if ($transaksi->status === 'Selesai') {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Transaksi sudah Selesai dan tidak bisa diedit'
+                'message' => 'Transaksi sudah Selesai and tidak bisa diedit'
             ], 403);
         }
 
@@ -364,6 +404,16 @@ class TransaksiController extends Controller
                 'details.*.item_id' => 'required|integer',
                 'details.*.qty' => 'required|integer|min:1',
             ]);
+
+            if ($transaksi->distributor_id) {
+                foreach ($validated['details'] as $detail) {
+                    if ($detail['item_type'] !== 'StokProduk') {
+                        throw ValidationException::withMessages([
+                            'details' => 'Distributor hanya diperbolehkan membeli produk (StokProduk).'
+                        ]);
+                    }
+                }
+            }
 
             DB::beginTransaction();
 
@@ -380,7 +430,9 @@ class TransaksiController extends Controller
                     throw ValidationException::withMessages(['details' => 'Item tidak ditemukan']);
                 }
 
-                $harga = $modelItem->Harga;
+                $harga = ($transaksi->distributor_id && isset($modelItem->Harga_Distributor) && $modelItem->Harga_Distributor > 0)
+                         ? $modelItem->Harga_Distributor
+                         : $modelItem->Harga;
                 $namaItem = $item['item_type'] === 'StokProduk' ? $modelItem->Nama_produk : $modelItem->Nama_treatment;
                 
                 $totalHarga = $harga * $item['qty'];
@@ -401,6 +453,28 @@ class TransaksiController extends Controller
             }
 
             \App\Models\TransaksiDetail::insert($detailsInsert);
+
+            $oldTotal = $transaksi->total_keseluruhan;
+            $newTotal = $totalKeseluruhan;
+
+            if ($transaksi->distributor_id) {
+                $distributor = \App\Models\Distributor::find($transaksi->distributor_id);
+                if ($distributor) {
+                    $diff = $newTotal - $oldTotal;
+                    if ($diff > 0) {
+                        if ($distributor->sisa_deposit < $diff) {
+                            throw ValidationException::withMessages([
+                                'details' => 'Saldo deposit distributor tidak mencukupi untuk perubahan jumlah barang ini. Sisa deposit saat ini: Rp ' . number_format($distributor->sisa_deposit, 0, ',', '.')
+                            ]);
+                        }
+                        $distributor->sisa_deposit -= $diff;
+                    } else {
+                        $distributor->sisa_deposit += abs($diff);
+                    }
+                    $distributor->save();
+                }
+            }
+
             $transaksi->update(['total_keseluruhan' => $totalKeseluruhan]);
 
             DB::commit();
@@ -471,6 +545,9 @@ class TransaksiController extends Controller
                         $detail->qty = $payloadItem['qty'] ?? $detail->qty;
                         
                         if (isset($payloadItem['itemable_id'])) {
+                            if ($transaksi->distributor_id && isset($payloadItem['itemable_type']) && $payloadItem['itemable_type'] !== 'App\\Models\\StokProduk') {
+                                throw new \Exception('Distributor hanya diperbolehkan membeli produk (StokProduk).');
+                            }
                             $detail->itemable_id = $payloadItem['itemable_id'];
                             $detail->itemable_type = $payloadItem['itemable_type'] ?? $detail->itemable_type;
                             $detail->nama_item = $payloadItem['nama_item'] ?? $detail->nama_item;
@@ -484,6 +561,25 @@ class TransaksiController extends Controller
                     }
                 }
                 
+                $oldTotal = $transaksi->total_keseluruhan;
+                $newTotal = $totalKeseluruhan;
+
+                if ($transaksi->distributor_id) {
+                    $distributor = \App\Models\Distributor::find($transaksi->distributor_id);
+                    if ($distributor) {
+                        $diff = $newTotal - $oldTotal;
+                        if ($diff > 0) {
+                            if ($distributor->sisa_deposit < $diff) {
+                                throw new \Exception('Saldo deposit distributor tidak mencukupi untuk perubahan jumlah barang ini. Sisa deposit saat ini: Rp ' . number_format($distributor->sisa_deposit, 0, ',', '.'));
+                            }
+                            $distributor->sisa_deposit -= $diff;
+                        } else {
+                            $distributor->sisa_deposit += abs($diff);
+                        }
+                        $distributor->save();
+                    }
+                }
+
                 // Hitung ulang total harga induk
                 $transaksi->update(['total_keseluruhan' => $totalKeseluruhan]);
                 
