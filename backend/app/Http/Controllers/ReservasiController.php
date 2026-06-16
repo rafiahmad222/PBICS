@@ -54,6 +54,20 @@ class ReservasiController extends Controller
             'Kec_id' => 'required_if:register_pasien,true|nullable|exists:Kec,id',
         ]);
 
+        // === CEK KAPASITAS SLOT (Maks 3 orang per jam) ===
+        $MAX_KAPASITAS = 3;
+        $existingCount = Reservasi::where('Tanggal_reservasi', $validatedData['Tanggal_reservasi'])
+            ->where('Jam_reservasi', $validatedData['Jam_reservasi'])
+            ->whereNotIn('status', ['Batal'])
+            ->count();
+
+        if ($existingCount >= $MAX_KAPASITAS) {
+            return response()->json([
+                'message' => "Slot jam {$validatedData['Jam_reservasi']} pada tanggal {$validatedData['Tanggal_reservasi']} sudah penuh (kapasitas maksimal {$MAX_KAPASITAS} orang).",
+                'errors' => ['Jam_reservasi' => ["Slot ini sudah penuh ({$existingCount}/{$MAX_KAPASITAS})"]]
+            ], 422);
+        }
+
         \Illuminate\Support\Facades\DB::beginTransaction();
         try {
             $pasienId = $validatedData['pasien_id'] ?? null;
@@ -128,7 +142,7 @@ class ReservasiController extends Controller
                     'data_pasien_id' => $pasienId,
                     'tanggal_kunjungan' => $validatedData['Tanggal_reservasi'],
                     'tekanan_darah' => null,
-                    'keluhan_pasien' => $validatedData['Keterangan'] ?? null,
+                    'keluhan_pasien' => null,
                     'riwayat_penyakit' => null,
                     'perawatan_diklinik_sebelumnya' => null,
                     'diagnosa' => null,
@@ -281,7 +295,7 @@ class ReservasiController extends Controller
                             'data_pasien_id' => $newPasienId,
                             'tanggal_kunjungan' => $validatedData['Tanggal_reservasi'] ?? $reservasi->Tanggal_reservasi,
                             'tekanan_darah' => null,
-                            'keluhan_pasien' => $validatedData['Keterangan'] ?? $reservasi->Keterangan,
+                            'keluhan_pasien' => null,
                         ]);
                         $reservasi->update(['rekam_medis_id' => $rekamMedis->id]);
                     } else {
@@ -292,9 +306,6 @@ class ReservasiController extends Controller
                         }
                         if (array_key_exists('Tanggal_reservasi', $validatedData)) {
                             $rekamMedisData['tanggal_kunjungan'] = $validatedData['Tanggal_reservasi'];
-                        }
-                        if (array_key_exists('Keterangan', $validatedData)) {
-                            $rekamMedisData['keluhan_pasien'] = $validatedData['Keterangan'];
                         }
                         
                         if (!empty($rekamMedisData)) {
