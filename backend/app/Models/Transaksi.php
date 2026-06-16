@@ -29,7 +29,8 @@ class Transaksi extends Model
         'tanggal_transaksi',
         'catatan_pesanan',
         'status',
-        'total_keseluruhan'
+        'total_keseluruhan',
+        'metode_pembayaran'
     ];
 
     public function pasien()

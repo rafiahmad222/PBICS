@@ -20,7 +20,7 @@ class DataKaryawanController extends Controller
             $query->where('NamaLengkap_karyawan', 'like', '%' . $request->search . '%');
         }
 
-        $karyawan = $query->paginate(10)->through(function ($item) {
+        $karyawan = $query->paginate($request->input('per_page', 10))->through(function ($item) {
 
             // Inisial nama (DJ, DS, dll)
             $inisial = collect(explode(' ', $item->NamaLengkap_karyawan))

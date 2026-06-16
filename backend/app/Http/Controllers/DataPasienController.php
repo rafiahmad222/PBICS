@@ -16,7 +16,7 @@ class DataPasienController extends Controller
      */
     public function index(Request $request)
     {
-        $query = DataPasien::select(
+        $query = DataPasien::with('kec:id,name')->select(
             'id',
             'Nama_pasien',
             'kode_Customer',
@@ -27,7 +27,7 @@ class DataPasienController extends Controller
             'Kec_id',
         );
 
-        $pasiens = $query->latest()->paginate(10);
+        $pasiens = $query->latest()->paginate($request->input('per_page', 10));
 
         return response()->json([
             'message' => 'Data pasien berhasil diambil',
