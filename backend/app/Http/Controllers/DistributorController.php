@@ -106,13 +106,13 @@ class DistributorController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'nama_distributor' => 'required|string|max:255',
-            'tanggal_lahir' => 'required|date',
-            'alamat' => 'required|string|max:50',
-            'no_telp' => 'required|numeric|digits_between:10,13',
-            'email' => 'required|string|email|max:255',
-            'distributor' => 'required|string|max:20',
-            'deposit_masuk' => 'required|numeric',
+            'nama_distributor' => 'sometimes|required|string|max:255',
+            'tanggal_lahir' => 'sometimes|required|date',
+            'alamat' => 'sometimes|required|string|max:255',
+            'no_telp' => 'sometimes|required|numeric|digits_between:10,13',
+            'email' => 'sometimes|required|string|email|max:255',
+            'distributor' => 'nullable|string|max:20',
+            'deposit_masuk' => 'nullable|numeric',
         ], [
             'required' => 'Data wajib diisi',
             'no_telp.numeric' => 'Nomor telepon hanya boleh berisi angka',
@@ -126,23 +126,19 @@ class DistributorController extends Controller
             ], 422);
         }
 
-        // Calculate difference in deposit if needed. Here we assume editing deposit_masuk updates it or sets it.
-        // Assuming deposit_masuk is updated directly and we replace sisa_deposit or add to it? 
-        // Typically, editing a distributor replaces their deposit_masuk. I'll just update sisa_deposit based on the new deposit_masuk, or you could compute the difference. Since user story just says edit, I'll update fields.
-        
         $distributor->update([
-            'nama_distributor' => $request->nama_distributor,
-            'tanggal_lahir' => $request->tanggal_lahir,
-            'alamat' => $request->alamat,
-            'no_telp' => $request->no_telp,
-            'email' => $request->email,
-            'distributor' => $request->distributor,
-            'deposit_masuk' => $request->deposit_masuk,
-            'sisa_deposit' => $request->deposit_masuk, // Or maybe it shouldn't overwrite sisa_deposit? I'll overwrite it for simplicity unless told otherwise.
+            'nama_distributor' => $request->nama_distributor ?? $distributor->nama_distributor,
+            'tanggal_lahir' => $request->tanggal_lahir ?? $distributor->tanggal_lahir,
+            'alamat' => $request->alamat ?? $distributor->alamat,
+            'no_telp' => $request->no_telp ?? $distributor->no_telp,
+            'email' => $request->email ?? $distributor->email,
+            'distributor' => $request->distributor ?? $distributor->distributor,
+            'deposit_masuk' => $request->has('deposit_masuk') ? $request->deposit_masuk : $distributor->deposit_masuk,
+            'sisa_deposit' => $request->has('deposit_masuk') ? $request->deposit_masuk : $distributor->sisa_deposit,
         ]);
 
         return response()->json([
-            'message' => 'Berhasil, Data Distributor berhasil ditambahkan', // requested by user for both
+            'message' => 'Berhasil, Data Distributor berhasil diperbarui',
             'data' => $distributor
         ], 200);
     }
