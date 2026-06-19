@@ -6,6 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class Reservasi extends Model
 {
+    use \App\Traits\LogsActivity;
+
+    protected static $logModule = 'Reservasi';
+    protected static $logNameAttribute = 'Nama_pasien';
+
     const STATUS_PENDING = 'Pending';
     const STATUS_HADIR = 'Hadir';
     const STATUS_TIDAK_DATANG = 'Tidak Datang';

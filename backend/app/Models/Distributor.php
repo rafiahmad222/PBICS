@@ -7,7 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class Distributor extends Model
 {
-    use HasFactory;
+    use HasFactory, \App\Traits\LogsActivity;
+
+    protected static $logModule = 'Distributor';
+    protected static $logNameAttribute = 'nama_distributor';
 
     protected $fillable = [
         'nama_distributor',

@@ -13,6 +13,40 @@ class DataKaryawan extends Authenticatable
     public static $logModule = 'Manajemen Karyawan';
     public static $logNameAttribute = 'NamaLengkap_karyawan';
 
+    /**
+     * Override logAction to log own profile updates with custom module and details.
+     */
+    protected static function logAction($model, $action)
+    {
+        if (!auth()->check()) {
+            return;
+        }
+
+        // Jika password di-reset oleh admin/orang lain, abaikan log UPDATE generik di sini.
+        // Karena event ini sudah dicatat secara spesifik sebagai RESET_PASSWORD di controller.
+        if ($action === 'UPDATE' && $model->isDirty('Password') && auth()->id() !== $model->id) {
+            return;
+        }
+
+        $isOwnProfile = (auth()->id() === $model->id);
+
+        if ($isOwnProfile && $action === 'UPDATE') {
+            $module = 'Profil';
+            $details = 'Memperbarui data profile milik sendiri';
+        } else {
+            $module = self::getLogModule();
+            $details = self::getLogDetails($model, $action, $module);
+        }
+
+        \App\Models\ActivityLog::create([
+            'user_id' => auth()->id(),
+            'action' => $action,
+            'module' => $module,
+            'details' => $details,
+            'created_at' => now(),
+        ]);
+    }
+
     protected $table = 'data_karyawan';
 
     protected $keyType = 'string';

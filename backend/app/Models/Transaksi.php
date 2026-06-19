@@ -8,7 +8,10 @@ use App\Traits\ShiftsDateAfterFivePM;
 
 class Transaksi extends Model
 {
-    use HasUuids, ShiftsDateAfterFivePM;
+    use HasUuids, ShiftsDateAfterFivePM, \App\Traits\LogsActivity;
+
+    protected static $logModule = 'Transaksi';
+    protected static $logNameAttribute = 'no_faktur';
 
     protected $shiftDateColumns = ['tanggal_transaksi'];
 

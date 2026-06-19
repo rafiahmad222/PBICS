@@ -21,6 +21,18 @@ class AuthController extends Controller
         $karyawan = DataKaryawan::where('Username', $request->Username)->first();
 
         if (!$karyawan || !Hash::check($request->Password, $karyawan->Password)) {
+            $details = $karyawan 
+                ? "Percobaan masuk gagal untuk Karyawan {$karyawan->NamaLengkap_karyawan} ({$karyawan->Divisi}) karena password salah."
+                : "Percobaan masuk gagal menggunakan Username tidak terdaftar: \"{$request->Username}\".";
+                
+            \App\Models\ActivityLog::create([
+                'user_id' => $karyawan ? $karyawan->id : null,
+                'action' => 'GAGAL_LOGIN',
+                'module' => 'Keamanan',
+                'details' => $details,
+                'created_at' => now(),
+            ]);
+
             return response()->json([
                 'message' => 'Username atau Password salah!'
             ], 401);
@@ -28,6 +40,15 @@ class AuthController extends Controller
 
         // Token Sanctum
         $token = $karyawan->createToken('auth_token')->plainTextToken;
+
+        // Log login activity
+        \App\Models\ActivityLog::create([
+            'user_id' => $karyawan->id,
+            'action' => 'LOGIN',
+            'module' => 'Autentikasi',
+            'details' => "Karyawan {$karyawan->NamaLengkap_karyawan} ({$karyawan->Divisi}) berhasil masuk ke sistem.",
+            'created_at' => now(),
+        ]);
 
         return response()->json([
             'message' => 'Login berhasil',
@@ -59,6 +80,18 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
+        $karyawan = $request->user();
+        if ($karyawan) {
+            // Log logout activity
+            \App\Models\ActivityLog::create([
+                'user_id' => $karyawan->id,
+                'action' => 'LOGOUT',
+                'module' => 'Autentikasi',
+                'details' => "Karyawan {$karyawan->NamaLengkap_karyawan} ({$karyawan->Divisi}) berhasil keluar dari sistem.",
+                'created_at' => now(),
+            ]);
+        }
+
         $request->user()->tokens()->delete();
 
         return response()->json([

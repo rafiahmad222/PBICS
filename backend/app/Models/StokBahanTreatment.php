@@ -7,7 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class StokBahanTreatment extends Model
 {
-    use HasFactory;
+    use HasFactory, \App\Traits\LogsActivity;
+
+    protected static $logModule = 'Stok Bahan Treatment';
+    protected static $logNameAttribute = 'Nama_produk';
 
     protected $table = 'stok_bahan_treatments';
 
