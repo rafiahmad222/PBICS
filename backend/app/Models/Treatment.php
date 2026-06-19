@@ -7,7 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class Treatment extends Model
 {
-    use HasFactory;
+    use HasFactory, \App\Traits\LogsActivity;
+
+    protected static $logModule = 'Treatment';
+    protected static $logNameAttribute = 'Nama_treatment';
 
     protected $fillable = [
         'Kode_treatment',

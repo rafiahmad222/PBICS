@@ -52,7 +52,7 @@ class TransaksiController extends Controller
                 'metode_pembayaran' => 'nullable|string|in:Tunai,Non Tunai',
                 
                 'details' => 'required|array|min:1',
-                'details.*.item_type' => 'required|string|in:StokProduk,Treatment,StokRacikan',
+                'details.*.item_type' => 'required|string|in:StokProduk,Treatment,StokRacikan,PaketTreatment',
                 'details.*.item_id' => 'required|integer',
                 'details.*.qty' => 'required|integer|min:1',
             ]);
@@ -108,11 +108,10 @@ class TransaksiController extends Controller
             foreach ($validated['details'] as $item) {
                 if ($item['item_type'] === 'StokProduk') {
                     $itemsProduk[] = $item;
-                } elseif ($item['item_type'] === 'Treatment') {
+                } elseif ($item['item_type'] === 'Treatment' || $item['item_type'] === 'PaketTreatment') {
                     $itemsTreatment[] = $item;
                 } elseif ($item['item_type'] === 'StokRacikan') {
                     $itemsRacikan[] = $item;
-             
                 }
             }
 
@@ -121,27 +120,52 @@ class TransaksiController extends Controller
             $todayYmd = $businessNow->format('ymd');
             $orderId = 'ORD-' . $todayYmd . '-' . str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
 
-            // Validasi stok bahan treatment terlebih dahulu secara agregat
+            // Validasi stok bahan treatment/paket secara agregat
             if (count($itemsTreatment) > 0) {
                 $requiredBahan = [];
                 foreach ($itemsTreatment as $item) {
-                    $modelItem = Treatment::with('bahan')->find($item['item_id']);
-                    if (!$modelItem) {
-                        throw ValidationException::withMessages(['details' => 'Item treatment tidak ditemukan']);
-                    }
-                    if ($modelItem->bahan) {
-                        foreach ($modelItem->bahan as $bahanRelation) {
-                            $key = $bahanRelation->bahan_type . '_' . $bahanRelation->bahan_id;
-                            if (!isset($requiredBahan[$key])) {
-                                $requiredBahan[$key] = [
-                                    'type' => $bahanRelation->bahan_type,
-                                    'id' => $bahanRelation->bahan_id,
-                                    'required_qty' => 0,
-                                    'treatment_names' => []
-                                ];
+                    if ($item['item_type'] === 'PaketTreatment') {
+                        $modelItem = \App\Models\PaketTreatment::with('treatments.bahan')->find($item['item_id']);
+                        if (!$modelItem) {
+                            throw ValidationException::withMessages(['details' => 'Paket treatment tidak ditemukan']);
+                        }
+                        foreach ($modelItem->treatments as $treatment) {
+                            $pivotQty = $treatment->pivot->Jumlah ?? 1;
+                            if ($treatment->bahan) {
+                                foreach ($treatment->bahan as $bahanRelation) {
+                                    $key = $bahanRelation->bahan_type . '_' . $bahanRelation->bahan_id;
+                                    if (!isset($requiredBahan[$key])) {
+                                        $requiredBahan[$key] = [
+                                            'type' => $bahanRelation->bahan_type,
+                                            'id' => $bahanRelation->bahan_id,
+                                            'required_qty' => 0,
+                                            'treatment_names' => []
+                                        ];
+                                    }
+                                    $requiredBahan[$key]['required_qty'] += $item['qty'] * $pivotQty * $bahanRelation->Jumlah;
+                                    $requiredBahan[$key]['treatment_names'][] = $modelItem->Nama_paket;
+                                }
                             }
-                            $requiredBahan[$key]['required_qty'] += $item['qty'] * $bahanRelation->Jumlah;
-                            $requiredBahan[$key]['treatment_names'][] = $modelItem->Nama_treatment;
+                        }
+                    } else {
+                        $modelItem = Treatment::with('bahan')->find($item['item_id']);
+                        if (!$modelItem) {
+                            throw ValidationException::withMessages(['details' => 'Item treatment tidak ditemukan']);
+                        }
+                        if ($modelItem->bahan) {
+                            foreach ($modelItem->bahan as $bahanRelation) {
+                                $key = $bahanRelation->bahan_type . '_' . $bahanRelation->bahan_id;
+                                if (!isset($requiredBahan[$key])) {
+                                    $requiredBahan[$key] = [
+                                        'type' => $bahanRelation->bahan_type,
+                                        'id' => $bahanRelation->bahan_id,
+                                        'required_qty' => 0,
+                                        'treatment_names' => []
+                                    ];
+                                }
+                                $requiredBahan[$key]['required_qty'] += $item['qty'] * $bahanRelation->Jumlah;
+                                $requiredBahan[$key]['treatment_names'][] = $modelItem->Nama_treatment;
+                            }
                         }
                     }
                 }
@@ -204,40 +228,64 @@ class TransaksiController extends Controller
 
                 foreach ($itemsTreatment as $item) {
                     $itemClass = 'App\\Models\\' . $item['item_type'];
-                    $modelItem = $itemClass::with('bahan')->find($item['item_id']);
-                    
-                    if (!$modelItem) {
-                        throw ValidationException::withMessages(['details' => 'Item tidak ditemukan']);
+                    if ($item['item_type'] === 'PaketTreatment') {
+                        $modelItem = \App\Models\PaketTreatment::with('treatments.bahan')->find($item['item_id']);
+                        if (!$modelItem) {
+                            throw ValidationException::withMessages(['details' => 'Paket treatment tidak ditemukan']);
+                        }
+                        $harga = $modelItem->Harga_paket;
+                        $namaItem = $modelItem->Nama_paket;
+                    } else {
+                        $modelItem = Treatment::with('bahan')->find($item['item_id']);
+                        if (!$modelItem) {
+                            throw ValidationException::withMessages(['details' => 'Item tidak ditemukan']);
+                        }
+                        $harga = $modelItem->Harga;
+                        $namaItem = $modelItem->Nama_treatment;
                     }
-
-                    $harga = $modelItem->Harga;
-                    $namaItem = $modelItem->Nama_treatment;
                     
                     $totalHarga = $harga * $item['qty'];
                     $totalKeseluruhan += $totalHarga;
 
                     $detailsInsert[] = [
-                        'id' => \Illuminate\Support\Str::uuid()->toString(),
-                        'transaksi_id' => $transaksiTreatment->id,
-                        'itemable_type' => $itemClass,
-                        'itemable_id' => $item['item_id'],
-                        'nama_item' => $namaItem,
-                        'qty' => $item['qty'],
-                        'harga' => $harga,
-                        'total_harga' => $totalHarga,
-                        'created_at' => $businessNow,
-                        'updated_at' => $businessNow,
+                         'id' => \Illuminate\Support\Str::uuid()->toString(),
+                         'transaksi_id' => $transaksiTreatment->id,
+                         'itemable_type' => $itemClass,
+                         'itemable_id' => $item['item_id'],
+                         'nama_item' => $namaItem,
+                         'qty' => $item['qty'],
+                         'harga' => $harga,
+                         'total_harga' => $totalHarga,
+                         'created_at' => $businessNow,
+                         'updated_at' => $businessNow,
                     ];
 
                     // Kurangi stok bahan
-                    if ($modelItem->bahan) {
-                        foreach ($modelItem->bahan as $bahanRelation) {
-                            $bahanModelClass = $bahanRelation->bahan_type;
-                            $bahan = $bahanModelClass::find($bahanRelation->bahan_id);
-                            if ($bahan) {
-                                $pengurangan = $item['qty'] * $bahanRelation->Jumlah;
-                                $bahan->Stok -= $pengurangan;
-                                $bahan->save();
+                    if ($item['item_type'] === 'PaketTreatment') {
+                        foreach ($modelItem->treatments as $treatment) {
+                            $pivotQty = $treatment->pivot->Jumlah ?? 1;
+                            if ($treatment->bahan) {
+                                foreach ($treatment->bahan as $bahanRelation) {
+                                    $bahanModelClass = $bahanRelation->bahan_type;
+                                    $bahan = $bahanModelClass::find($bahanRelation->bahan_id);
+                                    if ($bahan) {
+                                        $pengurangan = $item['qty'] * $pivotQty * $bahanRelation->Jumlah;
+                                        $bahan->Stok -= $pengurangan;
+                                        $bahan->save();
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        if ($modelItem->bahan) {
+                            foreach ($modelItem->bahan as $bahanRelation) {
+                                $bahanModelClass = $bahanRelation->bahan_type;
+                                $bahan = $bahanModelClass::find($bahanRelation->bahan_id);
+                                if ($bahan) {
+                                    $pengurangan = $item['qty'] * $bahanRelation->Jumlah;
+                                    $bahan->Stok -= $pengurangan;
+                                    $bahan->save();
+                                }
                             }
                         }
                     }

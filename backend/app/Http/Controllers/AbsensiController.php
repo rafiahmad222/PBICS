@@ -140,6 +140,15 @@ class AbsensiController extends Controller
 
             // Radius maksimal 100 meter
             if ($distance > 100) {
+                // Log failed outside check-in attempt (Keamanan)
+                \App\Models\ActivityLog::create([
+                    'user_id' => $karyawan->id,
+                    'action' => 'AKSES_DITOLAK',
+                    'module' => 'Keamanan',
+                    'details' => "Karyawan {$karyawan->NamaLengkap_karyawan} ({$karyawan->Divisi}) mencoba melakukan absensi di luar area kantor (Jarak terdeteksi: " . round($distance) . " meter).",
+                    'created_at' => now(),
+                ]);
+
                 return response()->json([
                     'message' => 'Gagal, Anda harus melakukan absensi di area kantor!'
                 ], 422);
@@ -215,6 +224,17 @@ class AbsensiController extends Controller
                 'alasan_keterangan' => $alasan,
             ]);
 
+            // Log check-in activity
+            \App\Models\ActivityLog::create([
+                'user_id' => $karyawan->id,
+                'action' => $isLate ? 'TERLAMBAT' : 'ABSEN_MASUK',
+                'module' => 'Kehadiran',
+                'details' => $isLate 
+                    ? "Karyawan {$karyawan->NamaLengkap_karyawan} ({$karyawan->Divisi}) terlambat absen masuk selama {$diffInMinutes} menit. Alasan: \"{$alasan}\"."
+                    : "Karyawan {$karyawan->NamaLengkap_karyawan} ({$karyawan->Divisi}) melakukan absen masuk tepat waktu.",
+                'created_at' => now(),
+            ]);
+
             return response()->json([
                 'message' => $successMessage,
                 'data' => $absensi
@@ -232,6 +252,15 @@ class AbsensiController extends Controller
             $activeAbsensi->gambar_keluar = $request->file('gambar')->store('absensi', 'public');
             $activeAbsensi->lokasi_keluar = $request->lokasi;
             $activeAbsensi->save();
+
+            // Log check-out activity
+            \App\Models\ActivityLog::create([
+                'user_id' => $karyawan->id,
+                'action' => 'ABSEN_KELUAR',
+                'module' => 'Kehadiran',
+                'details' => "Karyawan {$karyawan->NamaLengkap_karyawan} ({$karyawan->Divisi}) melakukan absen keluar.",
+                'created_at' => now(),
+            ]);
 
             return response()->json([
                 'message' => 'Check-out berhasil! Sampai jumpa',

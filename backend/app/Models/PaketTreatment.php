@@ -7,7 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class PaketTreatment extends Model
 {
-    use HasFactory;
+    use HasFactory, \App\Traits\LogsActivity;
+
+    protected static $logModule = 'Paket Treatment';
+    protected static $logNameAttribute = 'Nama_paket';
 
     protected $fillable = [
         'Kode_paket',
@@ -16,7 +19,7 @@ class PaketTreatment extends Model
         'Harga_paket'
     ];
 
-    protected $appends = ['status'];
+    protected $appends = ['status', 'max_stok'];
 
     public function treatments()
     {
@@ -41,5 +44,23 @@ class PaketTreatment extends Model
         }
 
         return 'Available';
+    }
+
+    public function getMaxStokAttribute()
+    {
+        if ($this->treatments->isEmpty()) {
+            return 999;
+        }
+
+        $minPossible = null;
+        foreach ($this->treatments as $treatment) {
+            $pivotQty = $treatment->pivot->Jumlah ?? 1;
+            $possible = floor($treatment->max_stok / max(1, $pivotQty));
+            if ($minPossible === null || $possible < $minPossible) {
+                $minPossible = $possible;
+            }
+        }
+
+        return $minPossible ?? 0;
     }
 }

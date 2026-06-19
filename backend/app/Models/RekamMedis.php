@@ -8,7 +8,15 @@ use App\Traits\ShiftsDateAfterFivePM;
 
 class RekamMedis extends Model
 {
-    use HasFactory, ShiftsDateAfterFivePM;
+    use HasFactory, ShiftsDateAfterFivePM, \App\Traits\LogsActivity;
+
+    protected static $logModule = 'Rekam Medis';
+    protected static $logNameAttribute = 'pasien_name';
+
+    public function getPasienNameAttribute()
+    {
+        return $this->pasien ? $this->pasien->Nama_pasien : 'Pasien';
+    }
 
     protected $shiftDateColumns = ['tanggal_kunjungan'];
 

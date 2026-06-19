@@ -227,6 +227,15 @@ class DataKaryawanController extends Controller
             $karyawan->Password = Hash::make($validated['Password']);
             $karyawan->save();
 
+            // Log reset password activity
+            \App\Models\ActivityLog::create([
+                'user_id' => auth()->id(),
+                'action' => 'RESET_PASSWORD',
+                'module' => 'Keamanan',
+                'details' => "Mereset password untuk Karyawan {$karyawan->NamaLengkap_karyawan} ({$karyawan->Divisi}).",
+                'created_at' => now(),
+            ]);
+
             return response()->json([
                 'message' => 'Password karyawan berhasil diupdate',
             ]);
