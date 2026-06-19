@@ -16,7 +16,7 @@ class DataPasienController extends Controller
      */
     public function index(Request $request)
     {
-        $query = DataPasien::select(
+        $query = DataPasien::with('kec:id,name')->select(
             'id',
             'Nama_pasien',
             'kode_Customer',
@@ -27,7 +27,7 @@ class DataPasienController extends Controller
             'Kec_id',
         );
 
-        $pasiens = $query->latest()->paginate(10);
+        $pasiens = $query->latest()->paginate($request->input('per_page', 10));
 
         return response()->json([
             'message' => 'Data pasien berhasil diambil',
@@ -289,9 +289,20 @@ class DataPasienController extends Controller
             str_pad($format2, 2, '0', STR_PAD_LEFT) . "-" .
             str_pad($format3, 2, '0', STR_PAD_LEFT);
 
+        // 🔥 PREVIEW NO MEMBER
+        $lastPasienMember = DataPasien::whereNotNull('no_member')
+            ->where('no_member', 'like', 'MEM-%')
+            ->orderBy('no_member', 'desc')
+            ->first();
+
+        $lastMemberNumber = $lastPasienMember ? (int) substr($lastPasienMember->no_member, 4) : 0;
+        $newMemberNumber = $lastMemberNumber + 1;
+        $noMember = 'MEM-' . str_pad($newMemberNumber, 3, '0', STR_PAD_LEFT);
+
         return response()->json([
             'kode_Customer' => $kodeCustomer,
-            'no_RM' => $noRM
+            'no_RM' => $noRM,
+            'no_member' => $noMember
         ]);
     }
 

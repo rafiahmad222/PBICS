@@ -49,6 +49,7 @@ class TransaksiController extends Controller
                 'alamat_pengiriman' => 'nullable|string|max:255',
                 'tanggal_transaksi' => 'required|date',
                 'catatan_pesanan' => 'nullable|string|max:100',
+                'metode_pembayaran' => 'nullable|string|in:Tunai,Non Tunai',
                 
                 'details' => 'required|array|min:1',
                 'details.*.item_type' => 'required|string|in:StokProduk,Treatment,StokRacikan',
@@ -147,7 +148,8 @@ class TransaksiController extends Controller
                     'tanggal_transaksi' => $validated['tanggal_transaksi'],
                     'catatan_pesanan' => $validated['catatan_pesanan'] ?? null,
                     'status' => 'Selesai',
-                    'total_keseluruhan' => 0
+                    'total_keseluruhan' => 0,
+                    'metode_pembayaran' => $validated['metode_pembayaran'] ?? 'Tunai'
                 ]);
 
                 $totalKeseluruhan = 0;
@@ -226,7 +228,8 @@ class TransaksiController extends Controller
                     'tanggal_transaksi' => $validated['tanggal_transaksi'],
                     'catatan_pesanan' => $validated['catatan_pesanan'] ?? null,
                     'status' => 'Selesai',
-                    'total_keseluruhan' => 0
+                    'total_keseluruhan' => 0,
+                    'metode_pembayaran' => $validated['metode_pembayaran'] ?? 'Tunai'
                 ]);
 
                 $totalKeseluruhan = 0;
@@ -292,7 +295,8 @@ class TransaksiController extends Controller
                     'tanggal_transaksi' => $validated['tanggal_transaksi'],
                     'catatan_pesanan' => $validated['catatan_pesanan'] ?? null,
                     'status' => 'Pending',
-                    'total_keseluruhan' => 0
+                    'total_keseluruhan' => 0,
+                    'metode_pembayaran' => $validated['metode_pembayaran'] ?? 'Tunai'
                 ]);
 
                 $totalKeseluruhan = 0;
@@ -542,7 +546,10 @@ class TransaksiController extends Controller
                 foreach ($updatedDetails as $detail) {
                     $payloadItem = $sentDetails->firstWhere('id', $detail->id);
                     if ($payloadItem) {
-                        $detail->qty = $payloadItem['qty'] ?? $detail->qty;
+                        $oldQty = $detail->qty;
+                        $newQty = $payloadItem['qty'] ?? $detail->qty;
+
+                        $detail->qty = $newQty;
                         
                         if (isset($payloadItem['itemable_id'])) {
                             if ($transaksi->distributor_id && isset($payloadItem['itemable_type']) && $payloadItem['itemable_type'] !== 'App\\Models\\StokProduk') {
@@ -613,7 +620,7 @@ class TransaksiController extends Controller
 
             $transaksi->update($updateData);
 
-            // Pengurangan Stok menggunakan qty terbaru (jika sudah diedit gudang)
+            // Kurangi stok produk secara riil saat disetujui (ACC PO) oleh Gudang
             foreach ($transaksi->details as $detail) {
                 if ($detail->itemable_type === 'App\Models\StokProduk') {
                     $produk = StokProduk::find($detail->itemable_id);
