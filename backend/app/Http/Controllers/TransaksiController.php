@@ -448,7 +448,7 @@ class TransaksiController extends Controller
         if ($transaksi->status === 'Selesai') {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Transaksi sudah Selesai and tidak bisa diedit'
+                'message' => 'Transaksi sudah selesai dan tidak bisa di edit'
             ], 403);
         }
 
