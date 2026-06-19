@@ -121,6 +121,53 @@ class TransaksiController extends Controller
             $todayYmd = $businessNow->format('ymd');
             $orderId = 'ORD-' . $todayYmd . '-' . str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
 
+            // Validasi stok bahan treatment terlebih dahulu secara agregat
+            if (count($itemsTreatment) > 0) {
+                $requiredBahan = [];
+                foreach ($itemsTreatment as $item) {
+                    $modelItem = Treatment::with('bahan')->find($item['item_id']);
+                    if (!$modelItem) {
+                        throw ValidationException::withMessages(['details' => 'Item treatment tidak ditemukan']);
+                    }
+                    if ($modelItem->bahan) {
+                        foreach ($modelItem->bahan as $bahanRelation) {
+                            $key = $bahanRelation->bahan_type . '_' . $bahanRelation->bahan_id;
+                            if (!isset($requiredBahan[$key])) {
+                                $requiredBahan[$key] = [
+                                    'type' => $bahanRelation->bahan_type,
+                                    'id' => $bahanRelation->bahan_id,
+                                    'required_qty' => 0,
+                                    'treatment_names' => []
+                                ];
+                            }
+                            $requiredBahan[$key]['required_qty'] += $item['qty'] * $bahanRelation->Jumlah;
+                            $requiredBahan[$key]['treatment_names'][] = $modelItem->Nama_treatment;
+                        }
+                    }
+                }
+
+                foreach ($requiredBahan as $req) {
+                    $bahanModelClass = $req['type'];
+                    $bahan = $bahanModelClass::find($req['id']);
+                    if (!$bahan) {
+                        throw ValidationException::withMessages([
+                            'details' => "Bahan untuk treatment tidak ditemukan."
+                        ]);
+                    }
+                    if ($bahan->Stok < $req['required_qty']) {
+                        $bahanName = $bahan->Nama_produk 
+                            ?? $bahan->Nama_bahan_medis 
+                            ?? $bahan->Nama_bahan_infus 
+                            ?? $bahan->Nama_barang_apotek 
+                            ?? 'Bahan';
+                        $treatmentsStr = implode(', ', array_unique($req['treatment_names']));
+                        throw ValidationException::withMessages([
+                            'details' => "Stok bahan '{$bahanName}' tidak mencukupi untuk checkout treatment ({$treatmentsStr}). Stok tersedia: {$bahan->Stok}, dibutuhkan: {$req['required_qty']}."
+                        ]);
+                    }
+                }
+            }
+
             // Process Treatment
             if (count($itemsTreatment) > 0) {
                 // 1. Validasi ketersediaan stok bahan untuk seluruh treatment yang dipesan

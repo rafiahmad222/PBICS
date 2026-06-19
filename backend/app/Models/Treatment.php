@@ -16,7 +16,7 @@ class Treatment extends Model
         'Harga'
     ];
 
-    protected $appends = ['status'];
+    protected $appends = ['status', 'max_stok'];
 
     public function bahan()
     {
@@ -37,6 +37,27 @@ class Treatment extends Model
         }
 
         return 'Available';
+    }
+
+    public function getMaxStokAttribute()
+    {
+        if ($this->bahan->isEmpty()) {
+            return 999;
+        }
+
+        $minPossible = null;
+        foreach ($this->bahan as $treatmentBahan) {
+            $item = $treatmentBahan->bahan;
+            if (!$item) {
+                return 0;
+            }
+            $possible = floor($item->Stok / max(1, $treatmentBahan->Jumlah));
+            if ($minPossible === null || $possible < $minPossible) {
+                $minPossible = $possible;
+            }
+        }
+
+        return $minPossible ?? 0;
     }
 
     public function paketTreatments()
