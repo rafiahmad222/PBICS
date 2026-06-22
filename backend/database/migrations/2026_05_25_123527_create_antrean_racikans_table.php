@@ -13,12 +13,14 @@ return new class extends Migration
     {
         Schema::create('antrean_racikans', function (Blueprint $table) {
             $table->id();
-            $table->string('patient_id', 50);
-            $table->string('patient_name', 150);
-            $table->string('dokter_name', 150)->nullable();
+            $table->uuid('data_pasiens_id');
+            $table->string('nama_pasien', 150);
+            $table->string('nama_dokter', 150)->nullable();
             $table->text('racikan_text');
             $table->enum('status', ['Pending', 'Selesai'])->default('Pending');
             $table->timestamps();
+
+            $table->foreign('data_pasiens_id')->references('id')->on('data_pasiens')->onDelete('cascade');
         });
     }
 

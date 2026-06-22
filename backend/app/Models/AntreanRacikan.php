@@ -9,9 +9,9 @@ class AntreanRacikan extends Model
     protected $table = 'antrean_racikans';
 
     protected $fillable = [
-        'patient_id',
-        'patient_name',
-        'dokter_name',
+        'data_pasiens_id',
+        'nama_pasien',
+        'nama_dokter',
         'racikan_text',
         'status',
     ];
@@ -19,4 +19,9 @@ class AntreanRacikan extends Model
     protected $casts = [
         'status' => 'string',
     ];
+
+    public function dataPasien()
+    {
+        return $this->belongsTo(DataPasien::class, 'data_pasiens_id');
+    }
 }

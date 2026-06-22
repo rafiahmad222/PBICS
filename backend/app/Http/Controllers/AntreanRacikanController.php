@@ -35,9 +35,9 @@ class AntreanRacikanController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'patient_id' => 'required|string|max:50',
-            'patient_name' => 'required|string|max:150',
-            'dokter_name' => 'nullable|string|max:150',
+            'data_pasiens_id' => 'required|uuid',
+            'nama_pasien' => 'required|string|max:150',
+            'nama_dokter' => 'nullable|string|max:150',
             'racikan_text' => 'required|string',
             'status' => 'sometimes|required|in:Pending,Selesai',
         ]);
@@ -68,9 +68,9 @@ class AntreanRacikanController extends Controller
     public function update(Request $request, AntreanRacikan $antreanRacikan)
     {
         $validated = $request->validate([
-            'patient_id' => 'sometimes|required|string|max:50',
-            'patient_name' => 'sometimes|required|string|max:150',
-            'dokter_name' => 'nullable|string|max:150',
+            'data_pasiens_id' => 'sometimes|required|uuid',
+            'nama_pasien' => 'sometimes|required|string|max:150',
+            'nama_dokter' => 'nullable|string|max:150',
             'racikan_text' => 'sometimes|required|string',
             'status' => 'sometimes|required|in:Pending,Selesai',
         ]);
