@@ -229,7 +229,7 @@ class DataKaryawanController extends Controller
 
             // Log reset password activity
             \App\Models\ActivityLog::create([
-                'user_id' => auth()->id(),
+                'karyawan_id' => auth()->id(),
                 'action' => 'RESET_PASSWORD',
                 'module' => 'Keamanan',
                 'details' => "Mereset password untuk Karyawan {$karyawan->NamaLengkap_karyawan} ({$karyawan->Divisi}).",

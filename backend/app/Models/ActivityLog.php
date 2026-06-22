@@ -17,15 +17,15 @@ class ActivityLog extends Model
     const UPDATED_AT = null;
 
     protected $fillable = [
-        'user_id',
+        'karyawan_id',
         'action',
         'module',
         'details',
         'created_at'
     ];
 
-    public function user()
+    public function karyawan()
     {
-        return $this->belongsTo(DataKaryawan::class, 'user_id', 'id');
+        return $this->belongsTo(DataKaryawan::class, 'karyawan_id', 'id');
     }
 }

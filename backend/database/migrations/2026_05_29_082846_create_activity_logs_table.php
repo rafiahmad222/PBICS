@@ -13,11 +13,16 @@ return new class extends Migration
     {
         Schema::create('activity_logs', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('user_id')->nullable();
+            $table->uuid('karyawan_id')->nullable();
             $table->string('action');
             $table->string('module')->nullable();
             $table->text('details')->nullable();
             $table->timestamp('created_at')->useCurrent();
+
+            $table->foreign('karyawan_id')
+                ->references('id')
+                ->on('data_karyawan')
+                ->onDelete('set null');
         });
     }
 

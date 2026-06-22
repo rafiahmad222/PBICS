@@ -15,14 +15,14 @@ class ActivityLogController extends Controller
     {
         $search = $request->input('search');
 
-        $query = ActivityLog::with('user');
+        $query = ActivityLog::with('karyawan');
 
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('module', 'LIKE', "%{$search}%")
                   ->orWhere('details', 'LIKE', "%{$search}%")
-                  ->orWhereHas('user', function ($userQuery) use ($search) {
-                      $userQuery->where('NamaLengkap_karyawan', 'LIKE', "%{$search}%");
+                  ->orWhereHas('karyawan', function ($karyawanQuery) use ($search) {
+                      $karyawanQuery->where('NamaLengkap_karyawan', 'LIKE', "%{$search}%");
                   });
             });
         }
