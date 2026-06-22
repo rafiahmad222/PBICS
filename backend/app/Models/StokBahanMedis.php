@@ -29,4 +29,9 @@ class StokBahanMedis extends Model
     {
         $this->attributes['Stok'] = max(0, $value);
     }
+    public function treatmentBahans()
+{
+    return $this->morphMany(TreatmentBahan::class, 'bahan');
+}
+
 }
