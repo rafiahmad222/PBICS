@@ -45,6 +45,8 @@ class AbsensiController extends Controller
                     'Jam_Keluar' => $item->jam_keluar,
                     'Jabatan' => $item->karyawan ? strtoupper($item->karyawan->Jabatan . ' - ' . $item->karyawan->Divisi) : 'N/A',
                     'Status' => $item->status_absen,
+                    'gambar_masuk' => $item->gambar_masuk ?? null,
+                    'gambar_keluar' => $item->gambar_keluar ?? null,
                 ];
             });
 
