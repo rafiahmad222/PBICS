@@ -28,6 +28,8 @@ class AbsensiController extends Controller
 
         if ($request->has('tanggal') && $request->tanggal != '') {
             $query->where('tanggal', $request->tanggal);
+        } else {
+            $query->where('tanggal', '<=', Carbon::today()->toDateString());
         }
 
         $absensi = $query->orderBy('tanggal', 'desc')
@@ -248,6 +250,20 @@ class AbsensiController extends Controller
                 ], 422);
             }
 
+            // Validasi jika jam checkout belum sampai jadwal_keluar
+            if (str_contains(strtolower($activeAbsensi->shift_code), 'malam')) {
+                $jadwalKeluar = Carbon::parse($activeAbsensi->tanggal . ' ' . $activeAbsensi->jadwal_keluar)->addDay();
+            } else {
+                $jadwalKeluar = Carbon::parse($activeAbsensi->tanggal . ' ' . $activeAbsensi->jadwal_keluar);
+            }
+
+            if ($now->lt($jadwalKeluar)) {
+                $formattedJadwal = Carbon::parse($activeAbsensi->jadwal_keluar)->format('H:i');
+                return response()->json([
+                    'message' => "Gagal, Belum saatnya melakukan absensi keluar! Waktu kepulangan Anda adalah pukul {$formattedJadwal}."
+                ], 422);
+            }
+
             $activeAbsensi->jam_keluar = $now->toTimeString();
             $activeAbsensi->gambar_keluar = $request->file('gambar')->store('absensi', 'public');
             $activeAbsensi->lokasi_keluar = $request->lokasi;
@@ -386,4 +402,128 @@ class AbsensiController extends Controller
             ], 200);
         }
     }
+
+    /**
+     * Get lateness trend data for current and previous months.
+     */
+    public function getLatenessTrend(Request $request)
+    {
+        if (!in_array($request->user()->Divisi, ['HRD', 'Owner', 'Super Admin'])) {
+            return response()->json([
+                'message' => 'Akses ditolak!'
+            ], 403);
+        }
+
+        $thisMonth = Carbon::now()->month;
+        $thisYear = Carbon::now()->year;
+
+        $lastMonth = Carbon::now()->subMonth()->month;
+        $lastMonthYear = Carbon::now()->subMonth()->year;
+
+        $thisMonthData = Absensi::whereMonth('tanggal', $thisMonth)
+            ->whereYear('tanggal', $thisYear)
+            ->selectRaw('tanggal, 
+                sum(case when status_absen = "Terlambat" then 1 else 0 end) as terlambat_count,
+                count(*) as total_count')
+            ->groupBy('tanggal')
+            ->orderBy('tanggal', 'asc')
+            ->get();
+
+        $lastMonthData = Absensi::whereMonth('tanggal', $lastMonth)
+            ->whereYear('tanggal', $lastMonthYear)
+            ->selectRaw('tanggal, 
+                sum(case when status_absen = "Terlambat" then 1 else 0 end) as terlambat_count,
+                count(*) as total_count')
+            ->groupBy('tanggal')
+            ->orderBy('tanggal', 'asc')
+            ->get();
+
+        return response()->json([
+            'message' => 'Data tren keterlambatan berhasil diambil',
+            'this_month' => $thisMonthData,
+            'last_month' => $lastMonthData
+        ], 200);
+    }
+
+    /**
+     * Get monthly recap for all employees
+     */
+    public function getRekapBulanan(Request $request)
+    {
+        $bulan = $request->input('bulan', Carbon::now()->format('m'));
+        $tahun = $request->input('tahun', Carbon::now()->format('Y'));
+
+        $karyawans = DataKaryawan::orderBy('Divisi', 'asc')
+            ->orderBy('Jabatan', 'asc')
+            ->orderBy('NamaLengkap_karyawan', 'asc')
+            ->get();
+
+        $absensis = Absensi::whereMonth('tanggal', $bulan)
+            ->whereYear('tanggal', $tahun)
+            ->get();
+
+        $daysInMonth = Carbon::createFromDate($tahun, $bulan)->daysInMonth;
+        $result = [];
+
+        foreach ($karyawans as $karyawan) {
+            $karyawanAbsen = $absensis->where('karyawan_id', $karyawan->id);
+            
+            $attendance = [];
+            $total_masuk = 0;
+            $total_cuti = 0;
+            $total_lembur = 0;
+
+            for ($i = 1; $i <= $daysInMonth; $i++) {
+                $dateStr = sprintf('%04d-%02d-%02d', $tahun, $bulan, $i);
+                $absenHariIni = $karyawanAbsen->where('tanggal', $dateStr)->first();
+
+                if ($absenHariIni) {
+                    $status = $absenHariIni->status_absen;
+                    // Map frontend names
+                    if ($status === 'Tepat Waktu' || $status === 'Hadir') {
+                        $status = 'Masuk';
+                    }
+                    
+                    $attendance[(string)$i] = $status;
+
+                    if ($status === 'Masuk' || $status === 'Terlambat' || $status === 'Hadir') {
+                        $total_masuk++;
+                    } elseif (stripos($status, 'Cuti') !== false) {
+                        $total_cuti++;
+                    } elseif ($status === 'Lembur') {
+                        $total_lembur++;
+                        $total_masuk++; // Usually counts as present too
+                    }
+                } else {
+                    // Check if date is past. If past and no record, maybe it's not Alpa if it's Sunday.
+                    // For simplicity, just output blank if no record.
+                    $attendance[(string)$i] = '';
+                }
+            }
+
+            $result[] = [
+                'id' => $karyawan->kode_karyawan,
+                'nama' => $karyawan->NamaLengkap_karyawan,
+                'role' => strtoupper($karyawan->Jabatan . ' - ' . $karyawan->Divisi),
+                'attendance' => $attendance,
+                'summary' => [
+                    'total_masuk' => $total_masuk,
+                    'total_cuti' => $total_cuti,
+                    'total_lembur' => $total_lembur
+                ]
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Rekap bulanan berhasil diambil',
+            'data' => [
+                'daysInMonth' => $daysInMonth,
+                'bulan' => $bulan,
+                'tahun' => $tahun,
+                'rekap' => $result
+            ]
+        ], 200);
+    }
 }
+

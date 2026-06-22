@@ -21,7 +21,7 @@ class PengajuanCutiController extends Controller
             ], 403);
         }
 
-        $query = PengajuanCuti::with('karyawan');
+        $query = PengajuanCuti::with('karyawan')->orderBy('created_at', 'desc');
 
         if ($request->has('status') && $request->status != '') {
             $query->where('status_pengajuan', $request->status);

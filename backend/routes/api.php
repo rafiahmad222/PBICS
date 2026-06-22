@@ -115,6 +115,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/activity-logs', [\App\Http\Controllers\ActivityLogController::class, 'index']);
 
     // Absensi & Cuti Karyawan
+    Route::get('/absensi/lateness-trend', [AbsensiController::class, 'getLatenessTrend']);
+    Route::get('/absensi/rekap', [AbsensiController::class, 'getRekapBulanan']);
     Route::get('/absensi', [AbsensiController::class, 'index']);
     Route::post('/absensi', [AbsensiController::class, 'store']);
     Route::post('/pengajuan-cuti', [PengajuanCutiController::class, 'store']);
