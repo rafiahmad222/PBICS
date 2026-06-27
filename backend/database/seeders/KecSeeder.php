@@ -22,9 +22,15 @@ class KecSeeder extends Seeder
             }
         }
 
+        // Ambil semua data KabKota sekali saja (mengurangi N+1 query)
+        $kabKotaList = KabKota::pluck('id', 'name')->toArray();
+
         // Load districts.csv
         $file = base_path('districts.csv');
         $lines = file($file);
+
+        $kecsToInsert = [];
+        $now = now();
 
         for ($i = 0; $i < count($lines); $i++) {
             $data = str_getcsv($lines[$i]);
@@ -33,21 +39,25 @@ class KecSeeder extends Seeder
                 $regencyId = $data[1];
                 $districtName = trim($data[2]);
 
-                // Cari nama kab/kota dari mapping
+                // Cari nama kab/kota dari mapping csv
                 $kabKotaName = $regencyMap[$regencyId] ?? null;
 
-                if ($kabKotaName) {
-                    // Cari kab_kota.id berdasarkan nama
-                    $kabKota = KabKota::where('name', $kabKotaName)->first();
-
-                    if ($kabKota) {
-                        Kec::firstOrCreate([
-                            'KabKota_id' => $kabKota->id,
-                            'name' => $districtName
-                        ]);
-                    }
+                // Cek apakah KabKota ada di database
+                if ($kabKotaName && isset($kabKotaList[$kabKotaName])) {
+                    $kecsToInsert[] = [
+                        'KabKota_id' => $kabKotaList[$kabKotaName],
+                        'name' => $districtName,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
                 }
             }
+        }
+
+        // Insert data sekaligus (Bulk Insert / Chunk)
+        $chunks = array_chunk($kecsToInsert, 1000);
+        foreach ($chunks as $chunk) {
+            Kec::insert($chunk); // Akan jauh lebih cepat daripada firstOrCreate satu per satu
         }
     }
 }
