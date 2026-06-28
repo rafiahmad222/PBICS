@@ -73,6 +73,12 @@ class RekamMedis extends Model
                     ->withTimestamps();
     }
 
+    public function paketTreatments()
+    {
+        return $this->belongsToMany(PaketTreatment::class, 'rekam_medis_paket_treatments', 'rekam_medis_id', 'paket_treatment_id')
+                    ->withTimestamps();
+    }
+
     public function reseps()
     {
         return $this->belongsToMany(StokProduk::class, 'rekam_medis_reseps', 'rekam_medis_id', 'stok_produk_id')

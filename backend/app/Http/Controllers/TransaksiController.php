@@ -81,7 +81,7 @@ class TransaksiController extends Controller
                         }
                         $harga = (isset($modelItem->Harga_Distributor) && $modelItem->Harga_Distributor > 0) 
                                  ? $modelItem->Harga_Distributor 
-                                 : $modelItem->Harga;
+                                 : ($modelItem->Harga ?? 0);
                         $totalRequiredDeposit += $harga * $item['qty'];
                     }
 
@@ -233,14 +233,14 @@ class TransaksiController extends Controller
                         if (!$modelItem) {
                             throw ValidationException::withMessages(['details' => 'Paket treatment tidak ditemukan']);
                         }
-                        $harga = $modelItem->Harga_paket;
+                        $harga = $modelItem->Harga_paket ?? 0;
                         $namaItem = $modelItem->Nama_paket;
                     } else {
                         $modelItem = Treatment::with('bahan')->find($item['item_id']);
                         if (!$modelItem) {
                             throw ValidationException::withMessages(['details' => 'Item tidak ditemukan']);
                         }
-                        $harga = $modelItem->Harga;
+                        $harga = $modelItem->Harga ?? 0;
                         $namaItem = $modelItem->Nama_treatment;
                     }
                     
@@ -338,7 +338,7 @@ class TransaksiController extends Controller
                         throw ValidationException::withMessages(['details' => 'Item tidak ditemukan']);
                     }
 
-                    $harga = $modelItem->harga ?? $modelItem->Harga;
+                    $harga = $modelItem->harga ?? $modelItem->Harga ?? 0;
                     $namaItem = $modelItem->nama_obat_racik ?? $modelItem->Nama_obat_racik;
                     
                     $totalHarga = $harga * $item['qty'];
@@ -407,7 +407,7 @@ class TransaksiController extends Controller
 
                     $harga = ($isDistributor && isset($modelItem->Harga_Distributor) && $modelItem->Harga_Distributor > 0) 
                              ? $modelItem->Harga_Distributor 
-                             : $modelItem->Harga;
+                             : ($modelItem->Harga ?? 0);
                     $namaItem = $modelItem->Nama_produk;
                     
                     $totalHarga = $harga * $item['qty'];
@@ -531,7 +531,7 @@ class TransaksiController extends Controller
 
                 $harga = ($transaksi->distributor_id && isset($modelItem->Harga_Distributor) && $modelItem->Harga_Distributor > 0)
                          ? $modelItem->Harga_Distributor
-                         : $modelItem->Harga;
+                         : ($modelItem->Harga ?? 0);
                 $namaItem = $item['item_type'] === 'StokProduk' ? $modelItem->Nama_produk : $modelItem->Nama_treatment;
                 
                 $totalHarga = $harga * $item['qty'];
