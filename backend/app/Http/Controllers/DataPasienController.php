@@ -62,6 +62,7 @@ class DataPasienController extends Controller
                 'Alamat' => 'nullable|string',
                 'KabKota_id' => 'required|exists:KabKota,id',
                 'Kec_id' => 'required|exists:Kec,id',
+                'metode_pembayaran_member' => 'nullable|string|in:Tunai,Non Tunai',
             ]);
 
             // 🔥 AUTO GENERATE KODE CUSTOMER
@@ -113,7 +114,16 @@ class DataPasienController extends Controller
 
             $validated['Jenis_Kelamin'] = $validated['Jenis_Kelamin'] === 'Laki-laki' ? 'L' : 'P';
 
-            $pasien = DataPasien::create($validated);
+            $pasien = \Illuminate\Support\Facades\DB::transaction(function () use ($validated, $request) {
+                $pasien = DataPasien::create($validated);
+
+                if ($validated['Tipe_Member'] === 'Member') {
+                    $metodePembayaran = $request->input('metode_pembayaran_member', 'Tunai');
+                    $this->createMemberTransaction($pasien, $metodePembayaran);
+                }
+
+                return $pasien;
+            });
 
             return response()->json([
                 'message' => 'Data pasien berhasil dibuat',
@@ -126,6 +136,7 @@ class DataPasienController extends Controller
             ], 422);
         }
     }
+
 
     /**
      * Display the specified resource.
@@ -211,7 +222,10 @@ class DataPasienController extends Controller
                 'Alamat' => 'sometimes|nullable|string',
                 'KabKota_id' => 'sometimes|required|exists:KabKota,id',
                 'Kec_id' => 'sometimes|required|exists:Kec,id',
+                'metode_pembayaran_member' => 'nullable|string|in:Tunai,Non Tunai',
             ]);
+
+            $oldTipeMember = $dataPasien->Tipe_member;
 
             if (!empty($validated['no_member'])) {
                 $validated['Tipe_Member'] = 'Member';
@@ -225,7 +239,22 @@ class DataPasienController extends Controller
                 $validated['Jenis_Kelamin'] = $validated['Jenis_Kelamin'] === 'Laki-laki' ? 'L' : 'P';
             }
 
-            $dataPasien->update($validated);
+            \Illuminate\Support\Facades\DB::transaction(function () use ($dataPasien, $validated, $oldTipeMember, $request) {
+                $dataPasien->update($validated);
+
+                // Trigger transaction if upgraded to Member and hasn't paid before
+                if ($validated['Tipe_Member'] === 'Member' && $oldTipeMember !== 'Member') {
+                    $hasPaid = Transaksi::where('data_pasien_id', $dataPasien->id)
+                        ->where('tipe_transaksi', 'Registrasi Member')
+                        ->where('status', 'Selesai')
+                        ->exists();
+
+                    if (!$hasPaid) {
+                        $metodePembayaran = $request->input('metode_pembayaran_member', 'Tunai');
+                        $this->createMemberTransaction($dataPasien, $metodePembayaran);
+                    }
+                }
+            });
 
             return response()->json([
                 'message' => 'Data pasien berhasil diperbarui',
@@ -328,5 +357,61 @@ class DataPasienController extends Controller
             ->get();
 
         return response()->json($kecamatan);
+    }
+
+    /**
+     * Create a Rp 50,000 member registration transaction for a patient.
+     */
+    protected function createMemberTransaction(DataPasien $pasien, $metodePembayaran = 'Tunai')
+    {
+        $businessNow = \App\Traits\ShiftsDateAfterFivePM::getBusinessDate();
+        $todayYmd = $businessNow->format('ymd');
+        
+        $prefix = 'MB-' . $todayYmd;
+        $lastFaktur = Transaksi::where('no_faktur', 'like', $prefix . '%')
+                               ->orderBy('no_faktur', 'desc')
+                               ->first();
+        if ($lastFaktur) {
+            $lastSeq = (int) substr($lastFaktur->no_faktur, -3);
+            $newSeq = $lastSeq + 1;
+        } else {
+            $newSeq = 1;
+        }
+        $noFaktur = $prefix . str_pad($newSeq, 3, '0', STR_PAD_LEFT);
+        $orderId = 'ORD-' . $todayYmd . '-' . str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
+
+        $karyawanId = auth()->id();
+        if (!$karyawanId) {
+            $karyawanId = \App\Models\DataKaryawan::first()->id ?? null;
+        }
+
+        $transaksi = Transaksi::create([
+            'order_id' => $orderId,
+            'tipe_transaksi' => 'Registrasi Member',
+            'no_resi' => null,
+            'no_faktur' => $noFaktur,
+            'data_pasien_id' => $pasien->id,
+            'nama_pasien_distributor' => $pasien->Nama_pasien,
+            'alamat_pengiriman' => $pasien->Alamat,
+            'karyawan_id' => $karyawanId,
+            'tanggal_transaksi' => $businessNow->toDateString(),
+            'catatan_pesanan' => 'Pendaftaran Member Baru',
+            'status' => 'Selesai',
+            'total_keseluruhan' => 50000,
+            'metode_pembayaran' => $metodePembayaran
+        ]);
+
+        \App\Models\TransaksiDetail::create([
+            'id' => \Illuminate\Support\Str::uuid()->toString(),
+            'transaksi_id' => $transaksi->id,
+            'itemable_type' => DataPasien::class,
+            'itemable_id' => $pasien->id,
+            'nama_item' => 'Biaya Pendaftaran Member',
+            'qty' => 1,
+            'harga' => 50000,
+            'total_harga' => 50000,
+        ]);
+
+        return $transaksi;
     }
 }
