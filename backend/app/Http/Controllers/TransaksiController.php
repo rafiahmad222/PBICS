@@ -81,7 +81,7 @@ class TransaksiController extends Controller
                         }
                         $harga = (isset($modelItem->Harga_Distributor) && $modelItem->Harga_Distributor > 0) 
                                  ? $modelItem->Harga_Distributor 
-                                 : $modelItem->Harga;
+                                 : ($modelItem->Harga ?? 0);
                         $totalRequiredDeposit += $harga * $item['qty'];
                     }
 
@@ -194,57 +194,6 @@ class TransaksiController extends Controller
 
             // Process Treatment
             if (count($itemsTreatment) > 0) {
-                // 1. Validasi ketersediaan stok bahan untuk seluruh treatment yang dipesan
-                $requiredIngredients = [];
-                foreach ($itemsTreatment as $item) {
-                    $itemClass = 'App\\Models\\' . $item['item_type'];
-                    $modelItem = $itemClass::with('bahan')->find($item['item_id']);
-                    
-                    if (!$modelItem) {
-                        throw ValidationException::withMessages(['details' => 'Item tidak ditemukan']);
-                    }
-
-                    if ($modelItem->bahan) {
-                        foreach ($modelItem->bahan as $bahanRelation) {
-                            $key = $bahanRelation->bahan_type . ':' . $bahanRelation->bahan_id;
-                            $neededQty = $item['qty'] * $bahanRelation->Jumlah;
-                            
-                            if (isset($requiredIngredients[$key])) {
-                                $requiredIngredients[$key]['qty'] += $neededQty;
-                            } else {
-                                $requiredIngredients[$key] = [
-                                    'bahan_type' => $bahanRelation->bahan_type,
-                                    'bahan_id' => $bahanRelation->bahan_id,
-                                    'qty' => $neededQty,
-                                    'nama_treatment' => $modelItem->Nama_treatment
-                                ];
-                            }
-                        }
-                    }
-                }
-
-                foreach ($requiredIngredients as $req) {
-                    $bahanModelClass = $req['bahan_type'];
-                    $bahan = $bahanModelClass::find($req['bahan_id']);
-                    
-                    if (!$bahan) {
-                        throw ValidationException::withMessages([
-                            'details' => "Bahan untuk treatment '{$req['nama_treatment']}' tidak ditemukan."
-                        ]);
-                    }
-
-                    if ($bahan->Stok < $req['qty']) {
-                        $namaBahan = $bahan->Nama_produk 
-                            ?? $bahan->Nama_barang_apotek 
-                            ?? $bahan->Nama_bahan_medis 
-                            ?? $bahan->Nama_bahan_infus 
-                            ?? 'Bahan';
-                        throw ValidationException::withMessages([
-                            'details' => "Stok bahan '{$namaBahan}' tidak mencukupi untuk melakukan treatment '{$req['nama_treatment']}'. Dibutuhkan: {$req['qty']}, Tersedia: {$bahan->Stok}."
-                        ]);
-                    }
-                }
-
                 $prefixTreatment = 'PB-' . $todayYmd . '2';
                 $lastFakturTreatment = Transaksi::where('no_faktur', 'like', $prefixTreatment . '%')
                                                 ->orderBy('no_faktur', 'desc')
@@ -284,14 +233,14 @@ class TransaksiController extends Controller
                         if (!$modelItem) {
                             throw ValidationException::withMessages(['details' => 'Paket treatment tidak ditemukan']);
                         }
-                        $harga = $modelItem->Harga_paket;
+                        $harga = $modelItem->Harga_paket ?? 0;
                         $namaItem = $modelItem->Nama_paket;
                     } else {
                         $modelItem = Treatment::with('bahan')->find($item['item_id']);
                         if (!$modelItem) {
                             throw ValidationException::withMessages(['details' => 'Item tidak ditemukan']);
                         }
-                        $harga = $modelItem->Harga;
+                        $harga = $modelItem->Harga ?? 0;
                         $namaItem = $modelItem->Nama_treatment;
                     }
                     
@@ -389,7 +338,7 @@ class TransaksiController extends Controller
                         throw ValidationException::withMessages(['details' => 'Item tidak ditemukan']);
                     }
 
-                    $harga = $modelItem->harga ?? $modelItem->Harga;
+                    $harga = $modelItem->harga ?? $modelItem->Harga ?? 0;
                     $namaItem = $modelItem->nama_obat_racik ?? $modelItem->Nama_obat_racik;
                     
                     $totalHarga = $harga * $item['qty'];
@@ -458,7 +407,7 @@ class TransaksiController extends Controller
 
                     $harga = ($isDistributor && isset($modelItem->Harga_Distributor) && $modelItem->Harga_Distributor > 0) 
                              ? $modelItem->Harga_Distributor 
-                             : $modelItem->Harga;
+                             : ($modelItem->Harga ?? 0);
                     $namaItem = $modelItem->Nama_produk;
                     
                     $totalHarga = $harga * $item['qty'];
@@ -543,7 +492,7 @@ class TransaksiController extends Controller
         if ($transaksi->status === 'Selesai') {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Transaksi sudah selesai dan tidak bisa di edit'
+                'message' => 'Transaksi sudah Selesai and tidak bisa diedit'
             ], 403);
         }
 
@@ -582,7 +531,7 @@ class TransaksiController extends Controller
 
                 $harga = ($transaksi->distributor_id && isset($modelItem->Harga_Distributor) && $modelItem->Harga_Distributor > 0)
                          ? $modelItem->Harga_Distributor
-                         : $modelItem->Harga;
+                         : ($modelItem->Harga ?? 0);
                 $namaItem = $item['item_type'] === 'StokProduk' ? $modelItem->Nama_produk : $modelItem->Nama_treatment;
                 
                 $totalHarga = $harga * $item['qty'];

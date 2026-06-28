@@ -146,7 +146,7 @@ class AbsensiController extends Controller
             if ($distance > 100) {
                 // Log failed outside check-in attempt (Keamanan)
                 \App\Models\ActivityLog::create([
-                    'karyawan_id' => $karyawan->id,
+                    'user_id' => $karyawan->id,
                     'action' => 'AKSES_DITOLAK',
                     'module' => 'Keamanan',
                     'details' => "Karyawan {$karyawan->NamaLengkap_karyawan} ({$karyawan->Divisi}) mencoba melakukan absensi di luar area kantor (Jarak terdeteksi: " . round($distance) . " meter).",
@@ -230,7 +230,7 @@ class AbsensiController extends Controller
 
             // Log check-in activity
             \App\Models\ActivityLog::create([
-                'karyawan_id' => $karyawan->id,
+                'user_id' => $karyawan->id,
                 'action' => $isLate ? 'TERLAMBAT' : 'ABSEN_MASUK',
                 'module' => 'Kehadiran',
                 'details' => $isLate 
@@ -273,7 +273,7 @@ class AbsensiController extends Controller
 
             // Log check-out activity
             \App\Models\ActivityLog::create([
-                'karyawan_id' => $karyawan->id,
+                'user_id' => $karyawan->id,
                 'action' => 'ABSEN_KELUAR',
                 'module' => 'Kehadiran',
                 'details' => "Karyawan {$karyawan->NamaLengkap_karyawan} ({$karyawan->Divisi}) melakukan absen keluar.",

@@ -14,7 +14,7 @@ class RekamMedisController extends Controller
      */
     public function index()
     {
-        $data = RekamMedis::with(['pasien', 'dokter', 'treatments', 'reseps'])->get();
+        $data = RekamMedis::with(['pasien', 'dokter', 'treatments', 'paketTreatments', 'reseps'])->get();
         return response()->json($data, 200);
     }
 
@@ -40,6 +40,9 @@ class RekamMedisController extends Controller
             'treatments' => 'nullable|array',
             'treatments.*' => 'exists:treatments,id',
 
+            'paket_treatments' => 'nullable|array',
+            'paket_treatments.*' => 'exists:paket_treatments,id',
+
             'reseps' => 'nullable|array',
             'reseps.*.stok_produk_id' => 'required|exists:stok_produks,id',
             'reseps.*.jumlah' => 'required|integer|min:1',
@@ -47,7 +50,7 @@ class RekamMedisController extends Controller
 
         DB::beginTransaction();
         try {
-            $data = $request->except(['gambar_sebelum', 'gambar_sesudah', 'treatments', 'reseps']);
+            $data = $request->except(['gambar_sebelum', 'gambar_sesudah', 'treatments', 'paket_treatments', 'reseps']);
 
             if ($request->hasFile('gambar_sebelum')) {
                 $data['gambar_sebelum'] = $request->file('gambar_sebelum')->store('rekam_medis', 'public');
@@ -61,6 +64,10 @@ class RekamMedisController extends Controller
 
             if ($request->has('treatments')) {
                 $rekamMedis->treatments()->sync($request->treatments);
+            }
+
+            if ($request->has('paket_treatments')) {
+                $rekamMedis->paketTreatments()->sync($request->paket_treatments);
             }
 
             if ($request->has('reseps')) {
@@ -77,7 +84,7 @@ class RekamMedisController extends Controller
 
             return response()->json([
                 'message' => 'Rekam Medis berhasil ditambahkan',
-                'data' => $rekamMedis->load(['pasien', 'dokter', 'treatments', 'reseps'])
+                'data' => $rekamMedis->load(['pasien', 'dokter', 'treatments', 'paketTreatments', 'reseps'])
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -90,7 +97,7 @@ class RekamMedisController extends Controller
      */
     public function show($id)
     {
-        $rekamMedis = RekamMedis::with(['pasien', 'dokter', 'treatments', 'reseps'])->find($id);
+        $rekamMedis = RekamMedis::with(['pasien', 'dokter', 'treatments', 'paketTreatments', 'reseps'])->find($id);
         if (!$rekamMedis) {
             return response()->json(['message' => 'Rekam Medis tidak ditemukan'], 404);
         }
@@ -124,6 +131,9 @@ class RekamMedisController extends Controller
             'treatments' => 'nullable|array',
             'treatments.*' => 'exists:treatments,id',
 
+            'paket_treatments' => 'nullable|array',
+            'paket_treatments.*' => 'exists:paket_treatments,id',
+
             'reseps' => 'nullable|array',
             'reseps.*.stok_produk_id' => 'required|exists:stok_produks,id',
             'reseps.*.jumlah' => 'required|integer|min:1',
@@ -131,7 +141,7 @@ class RekamMedisController extends Controller
 
         DB::beginTransaction();
         try {
-            $data = $request->except(['gambar_sebelum', 'gambar_sesudah', 'treatments', 'reseps']);
+            $data = $request->except(['gambar_sebelum', 'gambar_sesudah', 'treatments', 'paket_treatments', 'reseps']);
 
             if ($request->hasFile('gambar_sebelum')) {
                 if ($rekamMedis->gambar_sebelum) {
@@ -153,6 +163,10 @@ class RekamMedisController extends Controller
                 $rekamMedis->treatments()->sync($request->treatments);
             }
 
+            if ($request->has('paket_treatments')) {
+                $rekamMedis->paketTreatments()->sync($request->paket_treatments);
+            }
+
             if ($request->has('reseps')) {
                 $resepsData = [];
                 foreach ($request->reseps as $resep) {
@@ -167,7 +181,7 @@ class RekamMedisController extends Controller
 
             return response()->json([
                 'message' => 'Rekam Medis berhasil diupdate',
-                'data' => $rekamMedis->load(['pasien', 'dokter', 'treatments', 'reseps'])
+                'data' => $rekamMedis->load(['pasien', 'dokter', 'treatments', 'paketTreatments', 'reseps'])
             ], 200);
         } catch (\Exception $e) {
             DB::rollBack();

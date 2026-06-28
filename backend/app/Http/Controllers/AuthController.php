@@ -26,7 +26,7 @@ class AuthController extends Controller
                 : "Percobaan masuk gagal menggunakan Username tidak terdaftar: \"{$request->Username}\".";
                 
             \App\Models\ActivityLog::create([
-                'karyawan_id' => $karyawan ? $karyawan->id : null,
+                'user_id' => $karyawan ? $karyawan->id : null,
                 'action' => 'GAGAL_LOGIN',
                 'module' => 'Keamanan',
                 'details' => $details,
@@ -43,7 +43,7 @@ class AuthController extends Controller
 
         // Log login activity
         \App\Models\ActivityLog::create([
-            'karyawan_id' => $karyawan->id,
+            'user_id' => $karyawan->id,
             'action' => 'LOGIN',
             'module' => 'Autentikasi',
             'details' => "Karyawan {$karyawan->NamaLengkap_karyawan} ({$karyawan->Divisi}) berhasil masuk ke sistem.",
@@ -84,7 +84,7 @@ class AuthController extends Controller
         if ($karyawan) {
             // Log logout activity
             \App\Models\ActivityLog::create([
-                'karyawan_id' => $karyawan->id,
+                'user_id' => $karyawan->id,
                 'action' => 'LOGOUT',
                 'module' => 'Autentikasi',
                 'details' => "Karyawan {$karyawan->NamaLengkap_karyawan} ({$karyawan->Divisi}) berhasil keluar dari sistem.",
