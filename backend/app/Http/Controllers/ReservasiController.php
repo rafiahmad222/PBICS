@@ -187,7 +187,15 @@ class ReservasiController extends Controller
 
             return response()->json([
                 'message' => 'Reservasi berhasil dibuat',
-                'data' => $reservasi->load(['pasien', 'karyawan', 'treatment', 'paketTreatment', 'treatments', 'paketTreatments', 'rekamMedis'])
+                'data' => $reservasi->load([
+                    'pasien',
+                    'karyawan',
+                    'treatment',
+                    'paketTreatment',
+                    'treatments',
+                    'paketTreatments',
+                    'rekamMedis'
+                ])
             ], 201);
 
         } catch (\Exception $e) {

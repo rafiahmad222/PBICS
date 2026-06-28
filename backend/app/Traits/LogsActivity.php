@@ -41,7 +41,7 @@ trait LogsActivity
         $details = self::getLogDetails($model, $action, $module);
 
         ActivityLog::create([
-            'user_id' => auth()->id(),
+            'karyawan_id' => auth()->id(),
             'action' => $action,
             'module' => $module,
             'details' => $details,
