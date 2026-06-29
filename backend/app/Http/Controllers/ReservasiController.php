@@ -12,7 +12,15 @@ class ReservasiController extends Controller
      */
     public function index()
     {
-        $reservasis = Reservasi::with(['pasien', 'karyawan', 'treatment', 'paketTreatment', 'treatments', 'paketTreatments', 'rekamMedis'])->latest()->get();
+        $reservasis = Reservasi::with([
+            'pasien',
+            'karyawan',
+            'treatment',
+            'paketTreatment',
+            'treatments',
+            'paketTreatments',
+            'rekamMedis'
+        ])->latest()->get();
         return response()->json($reservasis);
     }
 
@@ -21,38 +29,8 @@ class ReservasiController extends Controller
      */ 
     public function store(Request $request)
     {
-        $validatedData = $request->validate([
-            // Reservasi core
-            'Tanggal_reservasi' => 'required|date',
-            'Jam_reservasi' => 'required|date_format:H:i',
-            'pasien_id' => 'nullable|exists:data_pasiens,id',
-            'Nama_pasien' => 'required_without:pasien_id|string|max:255',
-            'No_Telp' => 'required|string|max:50',
-            'karyawan_id' => 'required|exists:data_karyawan,id',
-            'treatment_id' => 'nullable|exists:treatments,id',
-            'paket_treatment_id' => 'nullable|exists:paket_treatments,id',
-            'Keterangan' => 'nullable|string|max:255',
-            'status' => 'nullable|string|in:Pending,Hadir,Tidak Datang,Batal',
-
-            // Multi treatments & packages
-            'treatment_ids' => 'nullable|array',
-            'treatment_ids.*' => 'exists:treatments,id',
-            'paket_treatment_ids' => 'nullable|array',
-            'paket_treatment_ids.*' => 'exists:paket_treatments,id',
-
-            // Patient creation flag & fields
-            'register_pasien' => 'nullable|boolean',
-            'no_member' => 'nullable|string|max:50',
-            'Tipe_Member' => 'nullable|in:Member,Non Member',
-            'no_Identitas' => 'required_if:register_pasien,true|nullable|string|max:100',
-            'Tempat_Lahir' => 'required_if:register_pasien,true|nullable|string|max:100',
-            'Tanggal_Lahir' => 'required_if:register_pasien,true|nullable|date',
-            'Jenis_Kelamin' => 'required_if:register_pasien,true|nullable|in:Laki-laki,Perempuan',
-            'Email' => 'nullable|email',
-            'Alamat' => 'nullable|string',
-            'KabKota_id' => 'required_if:register_pasien,true|nullable|exists:KabKota,id',
-            'Kec_id' => 'required_if:register_pasien,true|nullable|exists:Kec,id',
-        ]);
+        
+        
 
         // === CEK KAPASITAS SLOT (Maks 3 orang per jam) ===
         $MAX_KAPASITAS = 3;

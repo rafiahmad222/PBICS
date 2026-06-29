@@ -120,6 +120,22 @@ class TransaksiController extends Controller
             $todayYmd = $businessNow->format('ymd');
             $orderId = 'ORD-' . $todayYmd . '-' . str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
 
+            $shouldAddMemberFee = false;
+            $memberFeeInjected = false;
+            $pasienId = $validated['data_pasien_id'] ?? null;
+            if ($pasienId) {
+                $pasien = DataPasien::find($pasienId);
+                if ($pasien && $pasien->Tipe_member === 'Member') {
+                    $hasPaid = \App\Models\TransaksiDetail::where('itemable_type', DataPasien::class)
+                        ->where('itemable_id', $pasienId)
+                        ->where('nama_item', 'Biaya Pendaftaran Member')
+                        ->exists();
+                    if (!$hasPaid) {
+                        $shouldAddMemberFee = true;
+                    }
+                }
+            }
+
             // Validasi stok bahan treatment/paket secara agregat
             if (count($itemsTreatment) > 0) {
                 $requiredBahan = [];
@@ -226,6 +242,23 @@ class TransaksiController extends Controller
                 $totalKeseluruhan = 0;
                 $detailsInsert = [];
 
+                if ($shouldAddMemberFee && !$memberFeeInjected) {
+                    $totalKeseluruhan += 50000;
+                    $detailsInsert[] = [
+                         'id' => \Illuminate\Support\Str::uuid()->toString(),
+                         'transaksi_id' => $transaksiTreatment->id,
+                         'itemable_type' => DataPasien::class,
+                         'itemable_id' => $pasienId,
+                         'nama_item' => 'Biaya Pendaftaran Member',
+                         'qty' => 1,
+                         'harga' => 50000,
+                         'total_harga' => 50000,
+                         'created_at' => $businessNow,
+                         'updated_at' => $businessNow,
+                    ];
+                    $memberFeeInjected = true;
+                }
+
                 foreach ($itemsTreatment as $item) {
                     $itemClass = 'App\\Models\\' . $item['item_type'];
                     if ($item['item_type'] === 'PaketTreatment') {
@@ -330,6 +363,23 @@ class TransaksiController extends Controller
                 $totalKeseluruhan = 0;
                 $detailsInsert = [];
 
+                if ($shouldAddMemberFee && !$memberFeeInjected) {
+                    $totalKeseluruhan += 50000;
+                    $detailsInsert[] = [
+                         'id' => \Illuminate\Support\Str::uuid()->toString(),
+                         'transaksi_id' => $transaksiRacikan->id,
+                         'itemable_type' => DataPasien::class,
+                         'itemable_id' => $pasienId,
+                         'nama_item' => 'Biaya Pendaftaran Member',
+                         'qty' => 1,
+                         'harga' => 50000,
+                         'total_harga' => 50000,
+                         'created_at' => $businessNow,
+                         'updated_at' => $businessNow,
+                    ];
+                    $memberFeeInjected = true;
+                }
+
                 foreach ($itemsRacikan as $item) {
                     $itemClass = 'App\\Models\\' . $item['item_type'];
                     $modelItem = $itemClass::find($item['item_id']);
@@ -396,6 +446,23 @@ class TransaksiController extends Controller
 
                 $totalKeseluruhan = 0;
                 $detailsInsert = [];
+
+                if ($shouldAddMemberFee && !$memberFeeInjected) {
+                    $totalKeseluruhan += 50000;
+                    $detailsInsert[] = [
+                         'id' => \Illuminate\Support\Str::uuid()->toString(),
+                         'transaksi_id' => $transaksiProduk->id,
+                         'itemable_type' => DataPasien::class,
+                         'itemable_id' => $pasienId,
+                         'nama_item' => 'Biaya Pendaftaran Member',
+                         'qty' => 1,
+                         'harga' => 50000,
+                         'total_harga' => 50000,
+                         'created_at' => $businessNow,
+                         'updated_at' => $businessNow,
+                    ];
+                    $memberFeeInjected = true;
+                }
 
                 foreach ($itemsProduk as $item) {
                     $itemClass = 'App\\Models\\' . $item['item_type'];
