@@ -15,6 +15,21 @@ class DataPasien extends Model
     protected $keyType = 'string';
     public $incrementing = false;
 
+    protected $appends = ['needs_member_fee'];
+
+    public function getNeedsMemberFeeAttribute()
+    {
+        $tipeMember = $this->Tipe_Member ?? $this->Tipe_member ?? 'Non Member';
+        if (strcasecmp($tipeMember, 'Member') !== 0) {
+            return false;
+        }
+
+        return !\App\Models\TransaksiDetail::where('itemable_type', self::class)
+            ->where('itemable_id', $this->id)
+            ->where('nama_item', 'Biaya Pendaftaran Member')
+            ->exists();
+    }
+
     protected $fillable = [
         'kode_Customer',
         'no_member',
