@@ -22,7 +22,7 @@ WORKDIR /app
 COPY . /app
 
 # Install Laravel dependencies
-RUN composer install --optimize-autoloader --no-dev
+RUN composer install --optimize-autoloader --no-dev --prefer-source
 
 # Give full permission to storage and bootstrap/cache folders
 RUN chmod -R 777 storage bootstrap/cache
