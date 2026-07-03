@@ -29,6 +29,18 @@ class ReservasiController extends Controller
      */ 
     public function store(Request $request)
     {
+        // Filter out null / empty values from arrays before validation
+        if ($request->has('treatment_ids') && is_array($request->input('treatment_ids'))) {
+            $request->merge([
+                'treatment_ids' => array_filter($request->input('treatment_ids'), fn($val) => !is_null($val) && $val !== '')
+            ]);
+        }
+        if ($request->has('paket_treatment_ids') && is_array($request->input('paket_treatment_ids'))) {
+            $request->merge([
+                'paket_treatment_ids' => array_filter($request->input('paket_treatment_ids'), fn($val) => !is_null($val) && $val !== '')
+            ]);
+        }
+
         $validatedData = $request->validate([
             'Tanggal_reservasi' => 'required|date',
             'Jam_reservasi' => 'required|date_format:H:i',
@@ -230,6 +242,18 @@ class ReservasiController extends Controller
 
         if (!$reservasi) {
             return response()->json(['message' => 'Reservasi tidak ditemukan'], 404);
+        }
+
+        // Filter out null / empty values from arrays before validation
+        if ($request->has('treatment_ids') && is_array($request->input('treatment_ids'))) {
+            $request->merge([
+                'treatment_ids' => array_filter($request->input('treatment_ids'), fn($val) => !is_null($val) && $val !== '')
+            ]);
+        }
+        if ($request->has('paket_treatment_ids') && is_array($request->input('paket_treatment_ids'))) {
+            $request->merge([
+                'paket_treatment_ids' => array_filter($request->input('paket_treatment_ids'), fn($val) => !is_null($val) && $val !== '')
+            ]);
         }
 
         $validatedData = $request->validate([
