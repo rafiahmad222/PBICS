@@ -29,8 +29,30 @@ class ReservasiController extends Controller
      */ 
     public function store(Request $request)
     {
-        
-        
+        $validatedData = $request->validate([
+            'Tanggal_reservasi' => 'required|date',
+            'Jam_reservasi' => 'required|date_format:H:i',
+            'pasien_id' => 'nullable|exists:data_pasien,id',
+            'Nama_pasien' => 'required_if:register_pasien,true',
+            'No_Telp' => 'required_if:register_pasien,true',
+            'no_member' => 'nullable',
+            'Tipe_Member' => 'required_if:no_member,!=null',
+            'no_Identitas' => 'required_if:register_pasien,true',
+            'Tempat_Lahir' => 'required_if:register_pasien,true',
+            'Tanggal_Lahir' => 'required_if:register_pasien,true',
+            'Jenis_Kelamin' => 'required_if:register_pasien,true',
+            'Email' => 'nullable',
+            'Alamat' => 'nullable',
+            'KabKota_id' => 'required_if:register_pasien,true',
+            'Kec_id' => 'required_if:register_pasien,true',
+            'karyawan_id' => 'required|exists:karyawan,id',
+            'treatment_ids' => 'required|array',
+            'treatment_ids.*' => 'exists:treatment,id',
+            'paket_treatment_ids' => 'nullable|array',
+            'paket_treatment_ids.*' => 'exists:paket_treatment,id',
+            'Keterangan' => 'nullable',
+            'status' => 'nullable|in:Pending,Konfirmasi,Selesai,Batal',
+        ]);
 
         // === CEK KAPASITAS SLOT (Maks 3 orang per jam) ===
         $MAX_KAPASITAS = 3;
