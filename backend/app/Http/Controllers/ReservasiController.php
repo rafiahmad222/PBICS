@@ -32,7 +32,7 @@ class ReservasiController extends Controller
         $validatedData = $request->validate([
             'Tanggal_reservasi' => 'required|date',
             'Jam_reservasi' => 'required|date_format:H:i',
-            'pasien_id' => 'nullable|exists:data_pasien,id',
+            'pasien_id' => 'nullable|exists:data_pasiens,id',
             'Nama_pasien' => 'required_if:register_pasien,true',
             'No_Telp' => 'required_if:register_pasien,true',
             'no_member' => 'nullable',
