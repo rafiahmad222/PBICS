@@ -21,6 +21,8 @@ class ActivityLog extends Model
         'action',
         'module',
         'details',
+        'ip_address',
+        'user_agent',
         'created_at'
     ];
 

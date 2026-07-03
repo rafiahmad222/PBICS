@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustProxies(at: '*');
+        $middleware->prepend(\App\Http\Middleware\AuthenticateWithCookie::class);
 
         $middleware->alias([
             'Divisi' => \App\Http\Middleware\CheckDivisi::class,

@@ -43,6 +43,8 @@ class DataKaryawan extends Authenticatable
             'action' => $action,
             'module' => $module,
             'details' => $details,
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
             'created_at' => now(),
         ]);
     }

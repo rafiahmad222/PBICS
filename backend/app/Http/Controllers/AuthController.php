@@ -30,6 +30,8 @@ class AuthController extends Controller
                 'action' => 'GAGAL_LOGIN',
                 'module' => 'Keamanan',
                 'details' => $details,
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
                 'created_at' => now(),
             ]);
 
@@ -47,8 +49,12 @@ class AuthController extends Controller
             'action' => 'LOGIN',
             'module' => 'Autentikasi',
             'details' => "Karyawan {$karyawan->NamaLengkap_karyawan} ({$karyawan->Divisi}) berhasil masuk ke sistem.",
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
             'created_at' => now(),
         ]);
+
+        $cookie = cookie('auth_token', $token, 43200, null, null, true, true); // 30 days, secure, httpOnly
 
         return response()->json([
             'message' => 'Login berhasil',
@@ -61,7 +67,7 @@ class AuthController extends Controller
                 'divisi' => $karyawan->Divisi,
                 'cabang' => $karyawan->Cabang,
             ]
-        ], 200);
+        ], 200)->withCookie($cookie);
     }
 
     /**
@@ -88,14 +94,18 @@ class AuthController extends Controller
                 'action' => 'LOGOUT',
                 'module' => 'Autentikasi',
                 'details' => "Karyawan {$karyawan->NamaLengkap_karyawan} ({$karyawan->Divisi}) berhasil keluar dari sistem.",
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
                 'created_at' => now(),
             ]);
         }
 
         $request->user()->tokens()->delete();
 
+        $cookie = cookie()->forget('auth_token');
+
         return response()->json([
             'message' => 'Logout berhasil'
-        ]);
+        ])->withCookie($cookie);
     }
 }
