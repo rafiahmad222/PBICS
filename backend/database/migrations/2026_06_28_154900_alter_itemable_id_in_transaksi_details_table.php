@@ -12,8 +12,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Ubah tipe kolom itemable_id menjadi string (VARCHAR) agar bisa menampung UUID maupun integer ID
-        DB::statement("ALTER TABLE transaksi_details MODIFY COLUMN itemable_id VARCHAR(255) NOT NULL");
+        if (DB::getDriverName() !== 'sqlite') {
+            // Ubah tipe kolom itemable_id menjadi string (VARCHAR) agar bisa menampung UUID maupun integer ID
+            DB::statement("ALTER TABLE transaksi_details MODIFY COLUMN itemable_id VARCHAR(255) NOT NULL");
+        }
     }
 
     /**
@@ -21,7 +23,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Kembalikan ke tipe data unsignedBigInteger
-        DB::statement("ALTER TABLE transaksi_details MODIFY COLUMN itemable_id BIGINT UNSIGNED NOT NULL");
+        if (DB::getDriverName() !== 'sqlite') {
+            // Kembalikan ke tipe data unsignedBigInteger
+            DB::statement("ALTER TABLE transaksi_details MODIFY COLUMN itemable_id BIGINT UNSIGNED NOT NULL");
+        }
     }
 };

@@ -25,9 +25,8 @@ return new class extends Migration
             $table->string('gambar_keluar')->nullable();
             $table->string('lokasi_masuk')->nullable();
             $table->string('lokasi_keluar')->nullable();
-            $table->string('status_absen', 25);
-            $table->string('status_pengajuan', 25)->nullable();
-            $table->string('alasan_keterangan', 300)->nullable();
+            $table->string('status_masuk', 25);
+            $table->string('status_keluar', 25)->nullable();
             $table->timestamps();
         });
     }

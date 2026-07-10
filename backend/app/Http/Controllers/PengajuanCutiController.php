@@ -163,8 +163,8 @@ class PengajuanCutiController extends Controller
                         'shift_code' => 'cuti_izin',
                         'jadwal_masuk' => '00:00:00',
                         'jadwal_keluar' => '00:00:00',
-                        'status_absen' => ucfirst(strtolower($cuti->jenis_cuti)),
-                        'status_pengajuan' => 'DISETUJUI',
+                        'status_masuk' => ucfirst(strtolower($cuti->jenis_cuti)),
+                        'status_keluar' => ucfirst(strtolower($cuti->jenis_cuti)),
                     ]
                 );
             }

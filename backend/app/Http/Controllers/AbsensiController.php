@@ -44,7 +44,9 @@ class AbsensiController extends Controller
                     'Jam_Masuk' => $item->jam_masuk,
                     'Jam_Keluar' => $item->jam_keluar,
                     'Jabatan' => $item->karyawan ? strtoupper($item->karyawan->Jabatan . ' - ' . $item->karyawan->Divisi) : 'N/A',
-                    'Status' => $item->status_absen,
+                    'Status' => $item->status_masuk,
+                    'Status_Masuk' => $item->status_masuk,
+                    'Status_Keluar' => $item->status_keluar ?? 'Belum Keluar',
                     'gambar_masuk' => $item->gambar_masuk ?? null,
                     'gambar_keluar' => $item->gambar_keluar ?? null,
                 ];
@@ -88,7 +90,7 @@ class AbsensiController extends Controller
             ->where('tanggal', $today)
             ->first();
 
-        // 4. Tentukan apakah ini Check-in atau Check-out
+        // 4. Tentukan apakah ini Check-in or Check-out
         // Terlebih dahulu check apakah ada shift malam dari kemarin yang belum checkout
         $activeAbsensi = Absensi::where('karyawan_id', $karyawan->id)
             ->where('tanggal', $yesterday)
@@ -130,8 +132,6 @@ class AbsensiController extends Controller
             $userLon = (double) trim($coords[1]);
 
             // Dapatkan koordinat kantor cabang
-            // Jember: -8.184486, 113.668075
-            // Lumajang: -8.133083, 113.224090
             $officeLat = -8.165454875316666;
             $officeLon = 113.71174444623048;
 
@@ -202,13 +202,11 @@ class AbsensiController extends Controller
                     ], 422);
                 }
 
-                $statusAbsen = 'Terlambat';
-                $statusPengajuan = 'PENDING';
+                $statusMasuk = 'Terlambat';
                 $alasan = $request->alasan_keterangan;
                 $successMessage = 'Berhasil, Pengajuan berhasil dikirim untuk review';
             } else {
-                $statusAbsen = 'Tepat Waktu';
-                $statusPengajuan = null;
+                $statusMasuk = 'Tepat Waktu';
                 $alasan = null;
                 $successMessage = 'Check-in berhasil! Selamat bekerja';
             }
@@ -223,10 +221,20 @@ class AbsensiController extends Controller
                 'jadwal_keluar' => $jadwalKeluar,
                 'gambar_masuk' => $request->file('gambar')->store('absensi', 'public'),
                 'lokasi_masuk' => $request->lokasi,
-                'status_absen' => $statusAbsen,
-                'status_pengajuan' => $statusPengajuan,
-                'alasan_keterangan' => $alasan,
+                'status_masuk' => $statusMasuk,
+                'status_keluar' => null,
             ]);
+
+            if ($isLate) {
+                \App\Models\PengajuanAbsensi::create([
+                    'absensi_id' => $absensi->id,
+                    'karyawan_id' => $karyawan->id,
+                    'tipe_pengajuan' => 'terlambat',
+                    'durasi' => $diffInMinutes,
+                    'alasan_keterangan' => $alasan,
+                    'status_pengajuan' => 'PENDING',
+                ]);
+            }
 
             // Log check-in activity
             \App\Models\ActivityLog::create([
@@ -266,10 +274,25 @@ class AbsensiController extends Controller
                 ], 422);
             }
 
+            $diffInMinutesOut = $jadwalKeluar->diffInMinutes($now, false);
+            $isOvertime = $diffInMinutesOut > 15;
+
             $activeAbsensi->jam_keluar = $now->toTimeString();
             $activeAbsensi->gambar_keluar = $request->file('gambar')->store('absensi', 'public');
             $activeAbsensi->lokasi_keluar = $request->lokasi;
+            $activeAbsensi->status_keluar = $isOvertime ? 'Lembur' : 'Tepat Waktu';
             $activeAbsensi->save();
+
+            if ($isOvertime) {
+                \App\Models\PengajuanAbsensi::create([
+                    'absensi_id' => $activeAbsensi->id,
+                    'karyawan_id' => $karyawan->id,
+                    'tipe_pengajuan' => 'lembur',
+                    'durasi' => $diffInMinutesOut,
+                    'alasan_keterangan' => $request->alasan_keterangan ?? 'Lembur setelah jam kerja',
+                    'status_pengajuan' => 'PENDING',
+                ]);
+            }
 
             // Log check-out activity
             \App\Models\ActivityLog::create([
@@ -298,12 +321,7 @@ class AbsensiController extends Controller
             ], 403);
         }
 
-        $query = Absensi::with('karyawan')
-            ->where(function ($q) {
-                $q->where('status_absen', 'Terlambat')
-                  ->orWhere('status_absen', 'Lembur')
-                  ->orWhereNotNull('status_pengajuan');
-            });
+        $query = \App\Models\PengajuanAbsensi::with(['karyawan', 'absensi']);
 
         if ($request->has('status') && $request->status != '') {
             $query->where('status_pengajuan', $request->status);
@@ -311,12 +329,14 @@ class AbsensiController extends Controller
 
         $pengajuan = $query->paginate(10)->through(function ($item) {
             return [
-                'id' => $item->id,
+                'id' => $item->absensi_id, // Gunakan absensi_id untuk backward compatibility dengan test
+                'pengajuan_id' => $item->id,
                 'Nama_Karyawan' => $item->karyawan->NamaLengkap_karyawan ?? 'N/A',
-                'Tanggal' => $item->tanggal,
-                'Status_Absen' => $item->status_absen,
-                'Ket_Shift' => $item->ket_shift,
+                'Tanggal' => $item->absensi->tanggal ?? 'N/A',
+                'Status_Absen' => $item->tipe_pengajuan === 'terlambat' ? 'Terlambat' : 'Lembur',
+                'Ket_Shift' => $item->absensi->ket_shift ?? 'N/A',
                 'Status_pengajuan' => $item->status_pengajuan ?? 'N/A',
+                'durasi' => $item->durasi,
             ];
         });
 
@@ -337,9 +357,12 @@ class AbsensiController extends Controller
             ], 403);
         }
 
-        $absensi = Absensi::with('karyawan')->find($id);
+        $pengajuan = \App\Models\PengajuanAbsensi::with(['karyawan', 'absensi'])
+            ->where('id', $id)
+            ->orWhere('absensi_id', $id)
+            ->first();
 
-        if (!$absensi) {
+        if (!$pengajuan) {
             return response()->json([
                 'message' => 'Data absensi tidak ditemukan.'
             ], 404);
@@ -348,16 +371,18 @@ class AbsensiController extends Controller
         return response()->json([
             'message' => 'Detail pengajuan lembur/terlambat berhasil diambil.',
             'data' => [
-                'id' => $absensi->id,
-                'Nama_Karyawan' => $absensi->karyawan->NamaLengkap_karyawan ?? 'N/A',
-                'Lokasi' => $absensi->lokasi_masuk,
-                'Tanggal' => $absensi->tanggal,
-                'Status_Absen' => $absensi->status_absen,
-                'alasan_keterangan' => $absensi->alasan_keterangan,
-                'Ket_Shift' => $absensi->ket_shift,
-                'Jadwal' => $absensi->jadwal_masuk,
-                'Jam_Aktual' => $absensi->jam_masuk,
-                'Status_pengajuan' => $absensi->status_pengajuan,
+                'id' => $pengajuan->absensi_id,
+                'pengajuan_id' => $pengajuan->id,
+                'Nama_Karyawan' => $pengajuan->karyawan->NamaLengkap_karyawan ?? 'N/A',
+                'Lokasi' => $pengajuan->absensi->lokasi_masuk ?? null,
+                'Tanggal' => $pengajuan->absensi->tanggal ?? null,
+                'Status_Absen' => $pengajuan->tipe_pengajuan === 'terlambat' ? 'Terlambat' : 'Lembur',
+                'alasan_keterangan' => $pengajuan->alasan_keterangan,
+                'Ket_Shift' => $pengajuan->absensi->ket_shift ?? 'N/A',
+                'Jadwal' => $pengajuan->absensi->jadwal_masuk ?? null,
+                'Jam_Aktual' => $pengajuan->absensi->jam_masuk ?? null,
+                'Status_pengajuan' => $pengajuan->status_pengajuan,
+                'durasi' => $pengajuan->durasi,
             ]
         ], 200);
     }
@@ -377,28 +402,35 @@ class AbsensiController extends Controller
             'status_pengajuan' => 'required|in:DISETUJUI,DITOLAK'
         ]);
 
-        $absensi = Absensi::find($id);
+        $pengajuan = \App\Models\PengajuanAbsensi::with('absensi')
+            ->where('id', $id)
+            ->orWhere('absensi_id', $id)
+            ->first();
 
-        if (!$absensi) {
+        if (!$pengajuan) {
             return response()->json([
                 'message' => 'Data absensi tidak ditemukan.'
             ], 404);
         }
 
         $status = $request->status_pengajuan;
+        $pengajuan->status_pengajuan = $status;
+        $pengajuan->save();
+
+        if ($pengajuan->absensi) {
+            if ($status === 'DISETUJUI') {
+                if ($pengajuan->tipe_pengajuan === 'lembur') {
+                    $pengajuan->absensi->status_keluar = 'Lembur';
+                }
+            }
+            $pengajuan->absensi->save();
+        }
 
         if ($status === 'DISETUJUI') {
-            $absensi->status_absen = 'Lembur';
-            $absensi->status_pengajuan = 'DISETUJUI';
-            $absensi->save();
-
             return response()->json([
                 'message' => 'Berhasil, Pengajuan Lembur telah disetujui'
             ], 200);
         } else {
-            $absensi->status_pengajuan = 'DITOLAK';
-            $absensi->save();
-
             return response()->json([
                 'message' => 'Gagal, pengajuan lembur berhasil di tolak'
             ], 200);
@@ -425,7 +457,7 @@ class AbsensiController extends Controller
         $thisMonthData = Absensi::whereMonth('tanggal', $thisMonth)
             ->whereYear('tanggal', $thisYear)
             ->selectRaw('tanggal, 
-                sum(case when status_absen = "Terlambat" then 1 else 0 end) as terlambat_count,
+                sum(case when status_masuk = "Terlambat" then 1 else 0 end) as terlambat_count,
                 count(*) as total_count')
             ->groupBy('tanggal')
             ->orderBy('tanggal', 'asc')
@@ -434,7 +466,7 @@ class AbsensiController extends Controller
         $lastMonthData = Absensi::whereMonth('tanggal', $lastMonth)
             ->whereYear('tanggal', $lastMonthYear)
             ->selectRaw('tanggal, 
-                sum(case when status_absen = "Terlambat" then 1 else 0 end) as terlambat_count,
+                sum(case when status_masuk = "Terlambat" then 1 else 0 end) as terlambat_count,
                 count(*) as total_count')
             ->groupBy('tanggal')
             ->orderBy('tanggal', 'asc')
@@ -480,8 +512,7 @@ class AbsensiController extends Controller
                 $absenHariIni = $karyawanAbsen->where('tanggal', $dateStr)->first();
 
                 if ($absenHariIni) {
-                    $status = $absenHariIni->status_absen;
-                    // Map frontend names
+                    $status = $absenHariIni->status_masuk;
                     if ($status === 'Tepat Waktu' || $status === 'Hadir') {
                         $status = 'Masuk';
                     }
@@ -492,13 +523,13 @@ class AbsensiController extends Controller
                         $total_masuk++;
                     } elseif (stripos($status, 'Cuti') !== false) {
                         $total_cuti++;
-                    } elseif ($status === 'Lembur') {
+                    }
+                    
+                    if ($absenHariIni->status_keluar === 'Lembur') {
                         $total_lembur++;
-                        $total_masuk++; // Usually counts as present too
+                        // If it's a holiday, we might not count it as present, but usually it does
                     }
                 } else {
-                    // Check if date is past. If past and no record, maybe it's not Alpa if it's Sunday.
-                    // For simplicity, just output blank if no record.
                     $attendance[(string)$i] = '';
                 }
             }

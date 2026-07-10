@@ -16,9 +16,9 @@ return new class extends Migration
             $table->date('Tanggal_reservasi');
             $table->time('Jam_reservasi');
             $table->uuid('pasien_id')->nullable();
-            $table->string('Nama_pasien', 255)->nullable(); // Make nullable, filled if pasien_id is null or just fetched
+            $table->string('Nama_pasien', 255)->nullable();
             $table->string('No_Telp', 50);
-            $table->uuid('karyawan_id'); // Pendaftar
+            $table->uuid('karyawan_id');
             $table->unsignedBigInteger('treatment_id')->nullable();
             $table->unsignedBigInteger('paket_treatment_id')->nullable();
             $table->string('Keterangan', 255)->nullable();

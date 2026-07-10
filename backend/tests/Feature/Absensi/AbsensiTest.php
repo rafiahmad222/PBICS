@@ -88,7 +88,7 @@ class AbsensiTest extends TestCase
         $this->assertDatabaseHas('absensi', [
             'karyawan_id' => $this->karyawanPelayanan->id,
             'tanggal' => Carbon::today()->toDateString(),
-            'status_absen' => 'Tepat Waktu'
+            'status_masuk' => 'Tepat Waktu'
         ]);
 
         $absensi = Absensi::first();
@@ -144,7 +144,12 @@ class AbsensiTest extends TestCase
 
         $this->assertDatabaseHas('absensi', [
             'karyawan_id' => $this->karyawanPelayanan->id,
-            'status_absen' => 'Terlambat',
+            'status_masuk' => 'Terlambat',
+        ]);
+
+        $this->assertDatabaseHas('pengajuan_absensi', [
+            'karyawan_id' => $this->karyawanPelayanan->id,
+            'tipe_pengajuan' => 'terlambat',
             'status_pengajuan' => 'PENDING',
             'alasan_keterangan' => 'Ban bocor di daerah Sumbersari Jember'
         ]);
@@ -228,7 +233,7 @@ class AbsensiTest extends TestCase
             'jadwal_keluar' => '17:00:00',
             'gambar_masuk' => 'img_in',
             'lokasi_masuk' => '-8.165454875316666,113.71174444623048',
-            'status_absen' => 'Tepat Waktu',
+            'status_masuk' => 'Tepat Waktu',
         ]);
 
         // Set waktu check-out ke 17:05
@@ -336,13 +341,13 @@ class AbsensiTest extends TestCase
         $this->assertDatabaseHas('absensi', [
             'karyawan_id' => $this->karyawanPelayanan->id,
             'tanggal' => '2026-06-15',
-            'status_absen' => 'Cuti'
+            'status_masuk' => 'Cuti'
         ]);
 
         $this->assertDatabaseHas('absensi', [
             'karyawan_id' => $this->karyawanPelayanan->id,
             'tanggal' => '2026-06-16',
-            'status_absen' => 'Cuti'
+            'status_masuk' => 'Cuti'
         ]);
     }
 
@@ -364,9 +369,17 @@ class AbsensiTest extends TestCase
             'jadwal_keluar' => '17:00:00',
             'gambar_masuk' => 'img',
             'lokasi_masuk' => '-8.165454875316666,113.71174444623048',
-            'status_absen' => 'Terlambat',
-            'status_pengajuan' => 'PENDING',
+            'status_masuk' => 'Terlambat',
+            'status_keluar' => null,
+        ]);
+
+        $pengajuan = \App\Models\PengajuanAbsensi::create([
+            'absensi_id' => $absensi->id,
+            'karyawan_id' => $this->karyawanPelayanan->id,
+            'tipe_pengajuan' => 'terlambat',
+            'durasi' => 20,
             'alasan_keterangan' => 'Ban bocor mobil mogok dijalan',
+            'status_pengajuan' => 'PENDING',
         ]);
 
         $response = $this->postJson("/api/pengajuan-lembur/{$absensi->id}/review", [
@@ -378,9 +391,8 @@ class AbsensiTest extends TestCase
                      'message' => 'Berhasil, Pengajuan Lembur telah disetujui'
                  ]);
 
-        $this->assertDatabaseHas('absensi', [
-            'id' => $absensi->id,
-            'status_absen' => 'Lembur',
+        $this->assertDatabaseHas('pengajuan_absensi', [
+            'id' => $pengajuan->id,
             'status_pengajuan' => 'DISETUJUI'
         ]);
     }
@@ -402,9 +414,17 @@ class AbsensiTest extends TestCase
             'jadwal_keluar' => '17:00:00',
             'gambar_masuk' => 'img',
             'lokasi_masuk' => '-8.165454875316666,113.71174444623048',
-            'status_absen' => 'Terlambat',
-            'status_pengajuan' => 'PENDING',
+            'status_masuk' => 'Terlambat',
+            'status_keluar' => null,
+        ]);
+
+        $pengajuan = \App\Models\PengajuanAbsensi::create([
+            'absensi_id' => $absensi->id,
+            'karyawan_id' => $this->karyawanPelayanan->id,
+            'tipe_pengajuan' => 'terlambat',
+            'durasi' => 20,
             'alasan_keterangan' => 'Kesiangan tidur larut malam',
+            'status_pengajuan' => 'PENDING',
         ]);
 
         $response = $this->postJson("/api/pengajuan-lembur/{$absensi->id}/review", [
@@ -416,9 +436,8 @@ class AbsensiTest extends TestCase
                      'message' => 'Gagal, pengajuan lembur berhasil di tolak'
                  ]);
 
-        $this->assertDatabaseHas('absensi', [
-            'id' => $absensi->id,
-            'status_absen' => 'Terlambat',
+        $this->assertDatabaseHas('pengajuan_absensi', [
+            'id' => $pengajuan->id,
             'status_pengajuan' => 'DITOLAK'
         ]);
     }

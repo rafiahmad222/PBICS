@@ -29,9 +29,8 @@ class Absensi extends Model
         'gambar_keluar',
         'lokasi_masuk',
         'lokasi_keluar',
-        'status_absen',
-        'status_pengajuan',
-        'alasan_keterangan',
+        'status_masuk',
+        'status_keluar',
     ];
 
     public static $SHIFTS = [
@@ -78,6 +77,11 @@ class Absensi extends Model
     public function karyawan()
     {
         return $this->belongsTo(DataKaryawan::class, 'karyawan_id', 'id');
+    }
+
+    public function pengajuanAbsensi()
+    {
+        return $this->hasMany(PengajuanAbsensi::class, 'absensi_id', 'id');
     }
 
     public static function getShiftCategoryByDivisi($divisi)

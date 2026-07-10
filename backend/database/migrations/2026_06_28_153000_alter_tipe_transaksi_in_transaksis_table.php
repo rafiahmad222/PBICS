@@ -12,8 +12,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Modify the enum options for tipe_transaksi in transaksis table
-        DB::statement("ALTER TABLE transaksis MODIFY COLUMN tipe_transaksi ENUM('Produk', 'Treatment', 'Racikan', 'Registrasi Member') NOT NULL DEFAULT 'Produk'");
+        if (DB::getDriverName() !== 'sqlite') {
+            // Modify the enum options for tipe_transaksi in transaksis table
+            DB::statement("ALTER TABLE transaksis MODIFY COLUMN tipe_transaksi ENUM('Produk', 'Treatment', 'Racikan', 'Registrasi Member') NOT NULL DEFAULT 'Produk'");
+        }
     }
 
     /**
@@ -21,7 +23,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Revert enum back to original options
-        DB::statement("ALTER TABLE transaksis MODIFY COLUMN tipe_transaksi ENUM('Produk', 'Treatment', 'Racikan') NOT NULL DEFAULT 'Produk'");
+        if (DB::getDriverName() !== 'sqlite') {
+            // Revert enum back to original options
+            DB::statement("ALTER TABLE transaksis MODIFY COLUMN tipe_transaksi ENUM('Produk', 'Treatment', 'Racikan') NOT NULL DEFAULT 'Produk'");
+        }
     }
 };
