@@ -24,6 +24,7 @@ use App\Http\Controllers\PengajuanCutiController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\PengaturanAbsensiController;
 use App\Http\Controllers\HariLiburController;
+use App\Http\Controllers\PromoController;
 
 /** PR
  * ini bisa ditambahkan middleware lagi di setiap API yang ada
@@ -135,4 +136,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Distributor
     Route::put('/distributor/{id}/deposit', [\App\Http\Controllers\DistributorController::class, 'addDeposit']);
     Route::apiResource('distributor', \App\Http\Controllers\DistributorController::class);
+
+    // Manajemen Promo
+    Route::post('/promos/validate', [PromoController::class, 'validatePromo']);
+    Route::middleware('Divisi:Super Admin,Owner,HRD,Supervisor Treatment,Supervisor Produk')->group(function () {
+        Route::apiResource('promos', PromoController::class);
+    });
 });
