@@ -26,6 +26,18 @@ class PromoTarget extends Model
         'nilai_diskon_spesifik' => 'decimal:2'
     ];
 
+    protected $appends = ['item_name'];
+
+    public function getItemNameAttribute()
+    {
+        if ($this->item_type === 'Produk') {
+            return StokProduk::find($this->item_id)?->Nama_produk ?? 'Unknown Product';
+        } elseif ($this->item_type === 'Treatment') {
+            return Treatment::find($this->item_id)?->Nama_treatment ?? 'Unknown Treatment';
+        }
+        return 'Unknown';
+    }
+
     public function promo()
     {
         return $this->belongsTo(Promo::class, 'promo_id');

@@ -17,7 +17,7 @@ class PromoController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Promo::withCount('vouchers');
+        $query = Promo::with(['targets', 'vouchers'])->withCount('vouchers');
 
         // Filter status
         if ($request->filled('status')) {
