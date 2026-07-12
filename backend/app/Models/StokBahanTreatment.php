@@ -18,7 +18,6 @@ class StokBahanTreatment extends Model
         'Kode_Produk',
         'Nama_produk',
         'Kategori',
-        'Harga',
         'Stok',
         'Batas_minimal_stok',
     ];
