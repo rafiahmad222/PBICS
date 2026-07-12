@@ -186,6 +186,11 @@ class PromoController extends Controller
             'kode_promo' => 'nullable|string|max:50|unique:promos,kode_promo,' . $id,
             'kuota_global' => 'nullable|integer|min:1',
             'status' => 'in:Aktif,Berakhir,Draft',
+            'targets' => 'nullable|array',
+            'targets.*.target_type' => 'required|in:Syarat,Benefit,Target,Spesifik',
+            'targets.*.item_type' => 'required|in:Produk,Treatment',
+            'targets.*.item_id' => 'required|integer',
+            'targets.*.nilai_diskon_spesifik' => 'nullable|numeric|min:0',
         ]);
 
         if ($isUsed && $promo->status === 'Aktif') {
@@ -200,11 +205,33 @@ class PromoController extends Controller
             }
         }
 
-        $promo->update($validated);
+        DB::transaction(function () use ($promo, $validated) {
+            $promo->fill($validated);
+            $isDirty = $promo->isDirty();
+            $promo->save();
+
+            $targetsChanged = false;
+            if (isset($validated['targets'])) {
+                $promo->targets()->delete();
+                foreach ($validated['targets'] as $target) {
+                    $promo->targets()->create([
+                        'target_type' => $target['target_type'],
+                        'item_type' => $target['item_type'],
+                        'item_id' => $target['item_id'],
+                        'nilai_diskon_spesifik' => $target['nilai_diskon_spesifik'] ?? null,
+                    ]);
+                }
+                $targetsChanged = true;
+            }
+
+            if ($targetsChanged && !$isDirty) {
+                $promo->touch();
+            }
+        });
 
         return response()->json([
             'message' => 'Promo berhasil diperbarui.',
-            'data' => $promo
+            'data' => $promo->load(['targets', 'vouchers'])
         ]);
     }
 
