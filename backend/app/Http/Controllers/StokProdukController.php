@@ -135,4 +135,26 @@ class StokProdukController extends Controller
             'Kode_Produk' => $kodeProduk
         ]);
     }
+    
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy($id)
+    {
+        $stokProduk = StokProduk::find($id);
+
+        if (!$stokProduk) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Data Stok Produk tidak ditemukan'
+            ], 404);
+        }
+
+        $stokProduk->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Data Stok Produk berhasil dihapus'
+        ]);
+    }
 }

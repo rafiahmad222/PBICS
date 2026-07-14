@@ -303,7 +303,7 @@ class PromoController extends Controller
             }
 
             // 3. Cek Status Promo
-            if ($promo->status !== 'Aktif') {
+            if (strtolower($promo->status) !== 'aktif') {
                 return response()->json([
                     'status' => 'invalid',
                     'message' => 'Promo tidak sedang aktif.'
