@@ -20,6 +20,7 @@ class StokBahanTreatment extends Model
         'Kategori',
         'Stok',
         'Batas_minimal_stok',
+        'Harga',
     ];
 
     /**

@@ -31,7 +31,12 @@ class StokBahanTreatmentController extends Controller
                 'Kategori' => 'required|string|max:100',
                 'Stok' => 'required|integer|min:0',
                 'Batas_minimal_stok' => 'required|integer',
+                'Harga' => 'nullable|numeric|min:0',
             ]);
+
+            if (!isset($validated['Harga'])) {
+                $validated['Harga'] = 0;
+            }
 
             // AUTO GENERATE KODE PRODUK TREATMENT
             $lastBahan = StokBahanTreatment::orderBy('id', 'desc')->first();
@@ -96,7 +101,14 @@ class StokBahanTreatmentController extends Controller
                 'Kategori' => 'sometimes|required|string|max:100',
                 'Stok' => 'sometimes|required|integer|min:0',
                 'Batas_minimal_stok' => 'sometimes|required|integer',
+                'Harga' => 'nullable|numeric|min:0',
             ]);
+
+            if (!isset($validated['Harga']) && !$request->has('Harga')) {
+                // If Harga is not in the request, we don't necessarily update it to 0, 
+                // but if we want to ensure it doesn't throw, we could just leave it. 
+                // In update, usually we only update what's sent, so it's fine unless DB requires it and it was null.
+            }
 
             $stokBahan->update($validated);
 

@@ -14,6 +14,7 @@ class ActivityLogController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('search');
+        $date = $request->input('date');
 
         $query = ActivityLog::with('karyawan');
 
@@ -25,6 +26,10 @@ class ActivityLogController extends Controller
                       $karyawanQuery->where('NamaLengkap_karyawan', 'LIKE', "%{$search}%");
                   });
             });
+        }
+
+        if ($date) {
+            $query->whereDate('created_at', $date);
         }
 
         $logs = $query->orderBy('created_at', 'desc')->paginate(10);
