@@ -17,6 +17,11 @@ class PromoController extends Controller
      */
     public function index(Request $request)
     {
+        // Auto update status expired
+        Promo::where('status', 'Aktif')
+            ->whereDate('tanggal_selesai', '<', Carbon::today())
+            ->update(['status' => 'Berakhir']);
+
         $query = Promo::with(['targets', 'vouchers'])->withCount('vouchers');
 
         // Filter status
