@@ -55,6 +55,9 @@ class TransaksiController extends Controller
                 'details.*.item_type' => 'required|string|in:StokProduk,Treatment,StokRacikan,PaketTreatment',
                 'details.*.item_id' => 'required|integer',
                 'details.*.qty' => 'required|integer|min:1',
+                
+                'promo_code' => 'nullable|string',
+                'diskon_promo' => 'nullable|numeric|min:0',
             ]);
 
             DB::beginTransaction();
@@ -497,6 +500,38 @@ class TransaksiController extends Controller
                 \App\Models\TransaksiDetail::insert($detailsInsert);
                 $transaksiProduk->update(['total_keseluruhan' => $totalKeseluruhan]);
                 $createdTransaksis[] = $transaksiProduk->load('details');
+            }
+
+            if (!empty($validated['promo_code'])) {
+                $code = $validated['promo_code'];
+                $promo = \App\Models\Promo::where('kode_promo', $code)->first();
+                $isVoucher = false;
+                $voucher = null;
+
+                if (!$promo) {
+                    $voucher = \App\Models\PromoVoucher::where('kode_voucher', $code)->with('promo')->first();
+                    if ($voucher) {
+                        $promo = $voucher->promo;
+                        $isVoucher = true;
+                    }
+                }
+
+                if ($promo) {
+                    $totalTransaksiOmset = collect($createdTransaksis)->sum('total_keseluruhan');
+                    $promo->kuota_terpakai += 1;
+                    $promo->total_omset += $totalTransaksiOmset;
+                    $promo->total_diskon += $validated['diskon_promo'] ?? 0;
+                    $promo->save();
+
+                    if ($isVoucher) {
+                        $voucher->is_used = true;
+                        $voucher->used_at = now();
+                        if (count($createdTransaksis) > 0) {
+                            $voucher->used_by_transaction_id = $createdTransaksis[0]->id;
+                        }
+                        $voucher->save();
+                    }
+                }
             }
 
             DB::commit();

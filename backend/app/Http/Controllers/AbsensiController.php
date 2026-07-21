@@ -119,8 +119,8 @@ class AbsensiController extends Controller
             }
         }
 
-        // 5. Validasi Radius Kantor (jika wajib di Kantor)
-        if (strcasecmp($lokasiTarget, 'Kantor') === 0) {
+        // 5. Validasi Radius Kantor (jika wajib di Kantor dan hanya untuk absen masuk)
+        if (strcasecmp($lokasiTarget, 'Kantor') === 0 && !$activeAbsensi) {
             $coords = explode(',', $request->lokasi);
             if (count($coords) !== 2) {
                 return response()->json([
@@ -142,8 +142,8 @@ class AbsensiController extends Controller
 
             $distance = Absensi::calculateDistance($userLat, $userLon, $officeLat, $officeLon);
 
-            // Radius maksimal 100 meter
-            if ($distance > 100) {
+            // Radius maksimal 50 meter
+            if ($distance > 50) {
                 // Log failed outside check-in attempt (Keamanan)
                 \App\Models\ActivityLog::create([
                     'karyawan_id' => $karyawan->id,

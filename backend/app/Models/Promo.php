@@ -31,6 +31,8 @@ class Promo extends Model
         'kode_promo',
         'kuota_global',
         'kuota_terpakai',
+        'total_omset',
+        'total_diskon',
         'status',
         'created_by'
     ];
@@ -41,6 +43,8 @@ class Promo extends Model
         'min_order_amount' => 'decimal:2',
         'kuota_global' => 'integer',
         'kuota_terpakai' => 'integer',
+        'total_omset' => 'decimal:2',
+        'total_diskon' => 'decimal:2',
         'tanggal_mulai' => 'date',
         'tanggal_selesai' => 'date'
     ];
