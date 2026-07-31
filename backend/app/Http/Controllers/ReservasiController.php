@@ -153,6 +153,7 @@ class ReservasiController extends Controller
                 $rekamMedis = \App\Models\RekamMedis::create([
                     'data_pasien_id' => $pasienId,
                     'tanggal_kunjungan' => $validatedData['Tanggal_reservasi'],
+                    'dokter_id' => $validatedData['dokter_id'] ?? null,
                     'tekanan_darah' => null,
                     'keluhan_pasien' => null,
                     'riwayat_penyakit' => null,
@@ -179,6 +180,7 @@ class ReservasiController extends Controller
                 'Nama_pasien' => $namaPasien,
                 'No_Telp' => $validatedData['No_Telp'],
                 'karyawan_id' => $validatedData['karyawan_id'],
+                'dokter_id' => $validatedData['dokter_id'] ?? null,
                 'treatment_id' => $validatedData['treatment_id'] ?? ($validatedData['treatment_ids'][0] ?? null),
                 'paket_treatment_id' => $validatedData['paket_treatment_id'] ?? ($validatedData['paket_treatment_ids'][0] ?? null),
                 'Keterangan' => $validatedData['Keterangan'],
@@ -260,9 +262,10 @@ class ReservasiController extends Controller
             'Tanggal_reservasi' => 'sometimes|required|date',
             'Jam_reservasi' => 'sometimes|required|date_format:H:i',
             'pasien_id' => 'nullable|exists:data_pasiens,id',
-            'Nama_pasien' => 'sometimes|required_without:pasien_id|string|max:255',
-            'No_Telp' => 'sometimes|required|string|max:50',
-            'karyawan_id' => 'sometimes|required|exists:data_karyawan,id',
+            'Nama_pasien' => 'sometimes|required|string|max:150',
+            'No_Telp' => 'sometimes|required|string|max:20',
+            'karyawan_id' => 'sometimes|required|exists:data_karyawan,id', // Karyawan Pendaftar
+            'dokter_id' => 'sometimes|nullable|exists:data_karyawan,id', // Dokter Penanggung Jawab
             'treatment_id' => 'nullable|exists:treatments,id',
             'paket_treatment_id' => 'nullable|exists:paket_treatments,id',
             'Keterangan' => 'nullable|string|max:255',
@@ -326,6 +329,7 @@ class ReservasiController extends Controller
                         $rekamMedis = \App\Models\RekamMedis::create([
                             'data_pasien_id' => $newPasienId,
                             'tanggal_kunjungan' => $validatedData['Tanggal_reservasi'] ?? $reservasi->Tanggal_reservasi,
+                            'dokter_id' => $validatedData['dokter_id'] ?? $reservasi->dokter_id,
                             'tekanan_darah' => null,
                             'keluhan_pasien' => null,
                         ]);
@@ -338,6 +342,9 @@ class ReservasiController extends Controller
                         }
                         if (array_key_exists('Tanggal_reservasi', $validatedData)) {
                             $rekamMedisData['tanggal_kunjungan'] = $validatedData['Tanggal_reservasi'];
+                        }
+                        if (array_key_exists('dokter_id', $validatedData)) {
+                            $rekamMedisData['dokter_id'] = $validatedData['dokter_id'];
                         }
                         
                         if (!empty($rekamMedisData)) {

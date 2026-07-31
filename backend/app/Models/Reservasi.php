@@ -24,6 +24,7 @@ class Reservasi extends Model
         'Nama_pasien',
         'No_Telp',
         'karyawan_id',
+        'dokter_id',
         'treatment_id',
         'paket_treatment_id',
         'Keterangan',
@@ -40,6 +41,11 @@ class Reservasi extends Model
     public function karyawan()
     {
         return $this->belongsTo(DataKaryawan::class, 'karyawan_id');
+    }
+
+    public function dokter()
+    {
+        return $this->belongsTo(DataKaryawan::class, 'dokter_id');
     }
 
     public function rekamMedis()
